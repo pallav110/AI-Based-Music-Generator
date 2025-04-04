@@ -1,0 +1,4 @@
+/.venv
+/.venv-musicgen
+/*.sf2
+/generated_audio
