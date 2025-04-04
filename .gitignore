@@ -2,3 +2,4 @@
 /.venv-musicgen
 /*.sf2
 /generated_audio
+/generated_audio_optimized

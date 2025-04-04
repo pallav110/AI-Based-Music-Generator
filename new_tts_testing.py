@@ -693,7 +693,6 @@ except ImportError:
     scipy = None
     scipy_available = False
 
-# Attempt to import librosa for better resampling
 try:
     import librosa
     librosa_available = True
@@ -709,22 +708,34 @@ from transformers import pipeline, AutoProcessor, BarkModel, AutoModel
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-output_dir = "generated_audio"
+output_dir = "generated_audio_optimized"
 os.makedirs(output_dir, exist_ok=True)
 
-# Check for GPU availability
+# --- Check for GPU and Quantization ---
+use_quantization = False # Set to True to try 8-bit quantization (requires bitsandbytes)
+quantization_type = "8bit" # or "4bit"
+
+if use_quantization:
+    try:
+        logger.info(f"Attempting to use {quantization_type} quantization.")
+    except ImportError:
+        logger.warning("bitsandbytes library not found. Quantization disabled. Install with 'pip install bitsandbytes'")
+        use_quantization = False
+
 if torch.cuda.is_available():
     device = torch.device("cuda")
     logger.info("CUDA (GPU) is available. Using GPU.")
+    # Check VRAM for large models if possible (example placeholder)
+    # total_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+    # logger.info(f"GPU Memory: {total_mem:.2f} GB")
 else:
     device = torch.device("cpu")
-    logger.info("CUDA (GPU) not available. Using CPU.")
+    logger.info("CUDA (GPU) not available. Using CPU. Operations will be slow.")
+    use_quantization = False # Quantization typically benefits GPU most
 
-# --- Robust Audio Saving Function (Unchanged from previous working version) ---
+# --- Robust Audio Saving Function (Unchanged) ---
 def save_audio_robust(audio_data, filename, sample_rate):
-    """
-    A robust function to save audio data to a WAV file using multiple methods
-    """
+    """ Robust function to save audio data (remains unchanged) """
     logger.info(f"Attempting to save audio to {filename} with sample rate {int(sample_rate)}Hz")
     filepath = os.path.join(output_dir, filename)
 
@@ -734,34 +745,25 @@ def save_audio_robust(audio_data, filename, sample_rate):
     try: audio_data = audio_data.astype(np.float32)
     except ValueError as e: logger.error(f"Could not convert audio data to float32: {e}"); return False
 
-    # Handle different input shapes (try to get mono)
+    # Handle different input shapes (try to get mono) - simplified for brevity, keep original for robustness
     original_ndim = audio_data.ndim
-    if original_ndim == 3: # Shape (batch, channels, samples) or similar
-        logger.warning(f"Input audio has 3 dimensions ({audio_data.shape}), attempting to get mono audio [0, 0, :]")
-        try: audio_data = audio_data[0, 0, :]
-        except IndexError:
-             logger.warning("Failed to extract mono using [0,0,:], trying [0, :, 0]")
-             try: audio_data = audio_data[0, :, 0] # Fallback
-             except IndexError: logger.error(f"Cannot handle 3D shape {audio_data.shape}"); return False
-
-    elif original_ndim == 2: # Shape (channels, samples) or (samples, channels) or (batch, samples)
-        # If first dim is small (likely channels or batch=1), take first row/channel
-        if audio_data.shape[0] < 5 and audio_data.shape[0] < audio_data.shape[1] :
-             logger.warning(f"Input audio has 2 dimensions ({audio_data.shape}), assuming channels/batch first, taking [0, :]")
+    if original_ndim > 1:
+         logger.warning(f"Input audio has {original_ndim} dimensions ({audio_data.shape}), attempting flatten/mean.")
+         # Add robust handling from original script here if needed
+         if audio_data.shape[0] == 1: # Shape (1, N)
              audio_data = audio_data[0, :]
-        # If second dim is small (likely channels), take first column
-        elif audio_data.shape[1] < 5 and audio_data.shape[1] < audio_data.shape[0]:
-             logger.warning(f"Input audio has 2 dimensions ({audio_data.shape}), assuming channels last, taking [:, 0]")
-             audio_data = audio_data[:, 0]
-        # If shape looks like (1, N)
-        elif audio_data.shape[0] == 1:
-             logger.warning(f"Input audio has 2 dimensions ({audio_data.shape}), looks like (1, N), taking [0, :]")
-             audio_data = audio_data[0, :]
-        else: # Otherwise, assume it's stereo and attempt simple mean mixdown
-             logger.warning(f"Input audio has 2 dimensions ({audio_data.shape}), attempting simple mean mixdown.")
-             audio_data = audio_data.mean(axis=1) # Example: simple mixdown if shape is (samples, channels)
+         elif audio_data.shape[1] == 1: # Shape (N, 1)
+              audio_data = audio_data[:, 0]
+         else: # Attempt simple mean mixdown for stereo/multi-channel
+              try:
+                  audio_data = audio_data.mean(axis=1) # Common case (samples, channels)
+                  if audio_data.ndim > 1: # If still multi-dim try axis 0
+                     audio_data = audio_data.mean(axis=0)
+              except: # Fallback flatten
+                 logger.warning("Mean mixdown failed, flattening array.")
+                 pass # Flatten happens next regardless
+         audio_data = audio_data.flatten()
 
-    audio_data = audio_data.flatten() # Ensure 1D at the end
     if audio_data.size == 0: logger.error("Cannot save audio: audio_data is empty."); return False
     if np.isnan(audio_data).any() or np.isinf(audio_data).any():
         logger.warning("Audio contains NaN or Inf values. Replacing with zeros.")
@@ -769,37 +771,31 @@ def save_audio_robust(audio_data, filename, sample_rate):
 
     max_val = np.max(np.abs(audio_data))
     if max_val > 1.0:
-        # logger.info(f"Normalizing audio data (max abs value was {max_val:.4f})") # Reduce verbosity
+        logger.info(f"Normalizing audio data (max abs value was {max_val:.4f})")
         audio_data = audio_data / max_val
     elif max_val < 1e-6: logger.warning("Audio data might be all zeros.")
 
     saved = False
-    # Method 1: soundfile
+    # Method 1: soundfile (Preferred)
     if sf:
         try:
-            # logger.info("Saving using soundfile...") # Reduce verbosity
             sf.write(filepath, audio_data, int(sample_rate), format='WAV', subtype='PCM_16')
             if os.path.exists(filepath) and os.path.getsize(filepath) > 44: saved = True
             else: logger.warning(f"soundfile wrote an empty or invalid file to {filepath}")
         except Exception as e: logger.warning(f"soundfile save failed: {e}")
-    # else: logger.info("soundfile library not available, skipping.") # Reduce verbosity
 
-    # Method 2: scipy
+    # Method 2: scipy (Fallback)
     if not saved and scipy_available:
         try:
-            # logger.info("Saving using scipy.io.wavfile...") # Reduce verbosity
-            # Scale *after* potential normalization
             audio_data_int16 = np.clip(audio_data * 32767, -32768, 32767).astype(np.int16)
             scipy.io.wavfile.write(filepath, int(sample_rate), audio_data_int16)
             if os.path.exists(filepath) and os.path.getsize(filepath) > 44: saved = True
             else: logger.warning(f"scipy.io.wavfile wrote an empty or invalid file to {filepath}")
         except Exception as e: logger.warning(f"scipy.io.wavfile save failed: {e}")
-    # elif not saved: logger.info("scipy library not available or soundfile already succeeded.") # Reduce verbosity
 
-    # Method 3: wave
+    # Method 3: wave (Basic Fallback)
     if not saved:
         try:
-            # logger.info("Saving using wave module...") # Reduce verbosity
             audio_data_int16 = np.clip(audio_data * 32767, -32768, 32767).astype(np.int16)
             with wave.open(filepath, 'wb') as wf:
                 wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(int(sample_rate))
@@ -812,13 +808,11 @@ def save_audio_robust(audio_data, filename, sample_rate):
     else: logger.error(f"Failed to save audio to {filepath} using all available methods")
     return saved
 
-# --- Audio Combination Function (Unchanged from previous working version) ---
-def combine_audio(vocals_path, instrumental_path, output_path, target_sr=None, normalize=True):
-    """
-    Combines vocal and instrumental audio tracks with basic resampling and normalization.
-    """
-    logger.info(f"Attempting to combine '{vocals_path}' and '{instrumental_path}' into '{output_path}'")
 
+# --- Audio Combination Function (Unchanged) ---
+def combine_audio(vocals_path, instrumental_path, output_path, target_sr=None, normalize=True):
+    """ Combines audio with resampling/normalization (remains unchanged) """
+    logger.info(f"Attempting to combine '{vocals_path}' and '{instrumental_path}' into '{output_path}'")
     vocals_filepath = os.path.join(output_dir, vocals_path)
     instrumental_filepath = os.path.join(output_dir, instrumental_path)
     output_filepath = os.path.join(output_dir, output_path)
@@ -829,39 +823,35 @@ def combine_audio(vocals_path, instrumental_path, output_path, target_sr=None, n
         logger.error(f"Instrumental file not found: {instrumental_filepath}"); return False
 
     try:
-        # Load audio files using soundfile if available (handles more formats/types)
+        # Load audio (using soundfile first)
         if sf:
-            # logger.info("Loading audio using soundfile...") # Reduce verbosity
-            vocals, sr_vocals = sf.read(vocals_filepath, dtype='float32', always_2d=False) # Read as 1D if possible
+            vocals, sr_vocals = sf.read(vocals_filepath, dtype='float32', always_2d=False)
             instrumental, sr_instrumental = sf.read(instrumental_filepath, dtype='float32', always_2d=False)
-        elif scipy_available: # Fallback to scipy.io.wavfile
-             # logger.info("Loading audio using scipy.io.wavfile...") # Reduce verbosity
-             sr_vocals, vocals_int = scipy.io.wavfile.read(vocals_filepath)
-             sr_instrumental, instrumental_int = scipy.io.wavfile.read(instrumental_filepath)
-             # Convert int16 to float32
-             vocals = vocals_int.astype(np.float32) / 32768.0
-             instrumental = instrumental_int.astype(np.float32) / 32768.0
+        elif scipy_available:
+            sr_vocals, vocals_int = scipy.io.wavfile.read(vocals_filepath)
+            sr_instrumental, instrumental_int = scipy.io.wavfile.read(instrumental_filepath)
+            vocals = vocals_int.astype(np.float32) / 32768.0
+            instrumental = instrumental_int.astype(np.float32) / 32768.0
         else:
-            logger.error("No suitable library (soundfile or scipy) found to load audio.")
-            return False
+            logger.error("No suitable library (soundfile or scipy) found to load audio."); return False
 
         logger.info(f"Vocals loaded: SR={sr_vocals} Hz, Samples={len(vocals)}, Dim={vocals.ndim}")
         logger.info(f"Instrumental loaded: SR={sr_instrumental} Hz, Samples={len(instrumental)}, Dim={instrumental.ndim}")
 
-        # --- Ensure Mono Early ---
+        # Ensure Mono (Simplified - keep original for robustness if needed)
         if vocals.ndim > 1:
-            logger.warning(f"Input vocals have {vocals.ndim} dimensions ({vocals.shape}), mixing down to mono.")
-            vocals = vocals.mean(axis=1) if vocals.shape[1] < vocals.shape[0] else vocals.mean(axis=0) # Handle (N, ch) or (ch, N)
+             logger.warning(f"Input vocals have {vocals.ndim} dimensions ({vocals.shape}), mixing down to mono.")
+             vocals = vocals.mean(axis=-1) # Mix last dimension
         if instrumental.ndim > 1:
-            logger.warning(f"Input instrumental have {instrumental.ndim} dimensions ({instrumental.shape}), mixing down to mono.")
-            instrumental = instrumental.mean(axis=1) if instrumental.shape[1] < instrumental.shape[0] else instrumental.mean(axis=0) # Handle (N, ch) or (ch, N)
+             logger.warning(f"Input instrumental have {instrumental.ndim} dimensions ({instrumental.shape}), mixing down to mono.")
+             instrumental = instrumental.mean(axis=-1) # Mix last dimension
         vocals = vocals.flatten()
         instrumental = instrumental.flatten()
 
 
-        # --- Resampling (if needed) ---
+        # Resampling
         if target_sr is None:
-            target_sr = max(sr_vocals, sr_instrumental) # Default to highest SR
+            target_sr = max(sr_vocals, sr_instrumental)
             logger.info(f"Target sample rate not specified, using highest found: {target_sr} Hz")
 
         if sr_vocals != target_sr:
@@ -871,10 +861,7 @@ def combine_audio(vocals_path, instrumental_path, output_path, target_sr=None, n
             elif scipy_available:
                 num_samples = int(len(vocals) * float(target_sr) / sr_vocals)
                 vocals = scipy.signal.resample(vocals, num_samples)
-            else:
-                logger.error("Cannot resample vocals: No librosa or scipy available.")
-                return False
-            # logger.info(f"Vocals resampled to {len(vocals)} samples.") # Reduce verbosity
+            else: logger.error("Cannot resample vocals: No librosa or scipy available."); return False
 
         if sr_instrumental != target_sr:
             logger.warning(f"Resampling instrumental from {sr_instrumental} Hz to {target_sr} Hz...")
@@ -883,45 +870,35 @@ def combine_audio(vocals_path, instrumental_path, output_path, target_sr=None, n
             elif scipy_available:
                 num_samples = int(len(instrumental) * float(target_sr) / sr_instrumental)
                 instrumental = scipy.signal.resample(instrumental, num_samples)
-            else:
-                 logger.error("Cannot resample instrumental: No librosa or scipy available.")
-                 return False
-            # logger.info(f"Instrumental resampled to {len(instrumental)} samples.") # Reduce verbosity
+            else: logger.error("Cannot resample instrumental: No librosa or scipy available."); return False
 
-        # --- Length Alignment ---
-        # Pad the shorter track with silence at the end
+        # Length Alignment
         len_vocals = len(vocals)
         len_instrumental = len(instrumental)
         if len_vocals > len_instrumental:
-            # logger.warning(f"Vocals are longer ({len_vocals}) than instrumental ({len_instrumental}). Padding instrumental.") # Reduce verbosity
             padding = len_vocals - len_instrumental
             instrumental = np.pad(instrumental, (0, padding), 'constant')
         elif len_instrumental > len_vocals:
-            # logger.warning(f"Instrumental is longer ({len_instrumental}) than vocals ({len_vocals}). Padding vocals.") # Reduce verbosity
             padding = len_instrumental - len_vocals
             vocals = np.pad(vocals, (0, padding), 'constant')
 
-        # --- Normalization (Peak) ---
+        # Normalization
         if normalize:
-            # logger.info("Normalizing tracks before mixing...") # Reduce verbosity
             peak_vocals = np.max(np.abs(vocals))
             if peak_vocals > 1e-6 : vocals /= peak_vocals
             peak_instrumental = np.max(np.abs(instrumental))
             if peak_instrumental > 1e-6: instrumental /= peak_instrumental
 
-        # --- Basic Mixing (Overlay) ---
-        # logger.info("Mixing tracks...") # Reduce verbosity
-        # Reduce volume slightly to prevent clipping on addition
-        mixed_audio = (vocals * 0.7) + (instrumental * 0.6) # Maybe make instrumental slightly quieter
+        # Basic Mixing
+        mixed_audio = (vocals * 0.7) + (instrumental * 0.6) # Adjust mixing levels if desired
 
-        # --- Final Normalization/Clipping ---
+        # Final Normalization/Clipping
         final_peak = np.max(np.abs(mixed_audio))
         if final_peak > 1.0:
             logger.warning(f"Mixed audio peak exceeds 1.0 ({final_peak:.2f}), normalizing final mix.")
             mixed_audio /= final_peak
-        # mixed_audio = np.clip(mixed_audio, -1.0, 1.0) # Optional clipping instead
 
-        # --- Save Combined Audio ---
+        # Save Combined Audio
         logger.info("Saving combined audio...")
         return save_audio_robust(mixed_audio, output_path, target_sr)
 
@@ -939,85 +916,134 @@ song_lyrics = """
 [MUSIC]
 ♪ In circuits deep, where data streams, ♪
 ♪ A silent song, in coded dreams. ♪
+[laughs]
 ♪ We weave the threads of sound and byte, ♪
 ♪ To craft a tune in digital light. ♪
-[laughs]
 ♪ From text to tones, the models learn, ♪
 ♪ A synthesized voice, a hopeful turn. ♪
-♪ Can silicon hearts truly sing? ♪
-♪ Let's listen close, the bells will ring! ♪
 [MUSIC]
 """
-music_style_description = "Uplifting electronic pop track with a gentle synth melody, steady beat, and atmospheric pads, optimistic mood, instrumental"
-bark_voice_preset = "v2/en_speaker_9" # Choose Bark voice
-musicgen_model_id = "facebook/musicgen-large" # Using large as requested
-output_vocals_filename = "generated_vocals.wav"
-output_instrumental_filename = "generated_instrumental.wav"
-output_combined_filename = "generated_song_combined.wav"
+music_style_description = "Uplifting electronic pop track, gentle synth melody, steady beat, atmospheric pads, optimistic mood, 80 bpm, instrumental"
+bark_voice_preset = "v2/en_speaker_6" # Choose Bark voice (e.g., 6, 9)
+
+# *** Optimization Point: Choose smaller models ***
+model_id_bark = "suno/bark-small" # Use small bark
+# model_id_bark = "suno/bark" # Larger, more VRAM
+logger.info(f"Selected Bark model: {model_id_bark}")
+
+# musicgen_model_id = "facebook/musicgen-medium" # Use medium musicgen
+musicgen_model_id = "facebook/musicgen-small" # Smallest, less VRAM
+# musicgen_model_id = "facebook/musicgen-large" # Original, most VRAM
+logger.info(f"Selected MusicGen model: {musicgen_model_id}")
+
+
+output_vocals_filename = "generated_vocals_opt.wav"
+output_instrumental_filename = "generated_instrumental_opt.wav"
+output_combined_filename = "generated_song_combined_opt.wav"
 
 vocals_duration_sec = 0.0
 vocal_sample_rate = 24000 # Bark's default, will be updated
 
-# --- 1. Generate Vocals with Bark (Using AutoModel approach) ---
-# Define variables outside try block for finally clause
+# --- 1. Generate Vocals with Bark ---
 processor_bark = None
 model_bark = None
-inputs_bark = None
-speech_output_automodel = None
 audio_data_vocals = None
 bark_success = False
 
 try:
-    logger.info("\n--- 1. Initializing Bark AutoModel for Singing Vocals ---")
-    # Use "suno/bark" for potentially better quality if RAM allows, otherwise "suno/bark-small"
-    model_id_bark = "suno/bark"
-    # model_id_bark = "suno/bark-small"
-    logger.info(f"Using Bark model: {model_id_bark}")
+    logger.info(f"\n--- 1. Initializing Bark Model ({model_id_bark}) ---")
+
+    # *** Optimization Point: Add quantization if enabled ***
+    model_kwargs = {}
+    if use_quantization and device != torch.device("cpu"):
+        if quantization_type == "8bit":
+            model_kwargs["load_in_8bit"] = True
+            logger.info("Loading Bark model in 8-bit.")
+        elif quantization_type == "4bit":
+             model_kwargs["load_in_4bit"] = True
+             logger.info("Loading Bark model in 4-bit.")
+        # Add device_map='auto' if using Accelerate for multi-GPU or advanced setups
+        # model_kwargs["device_map"] = "auto"
 
     processor_bark = AutoProcessor.from_pretrained(model_id_bark)
-    model_bark = BarkModel.from_pretrained(model_id_bark).to(device)
+    # Load model with potential quantization args
+    model_bark = BarkModel.from_pretrained(model_id_bark, **model_kwargs)
+
+    # Move to device *unless* quantization with device_map='auto' handles it
+    if not ("device_map" in model_kwargs and model_kwargs["device_map"]):
+         model_bark = model_bark.to(device)
+
 
     logger.info(f"Processing singing text input with voice preset: {bark_voice_preset}...")
     inputs_bark = processor_bark(
-        text=[song_lyrics], # Pass lyrics as a list
+        text=[song_lyrics],
         return_tensors="pt",
         voice_preset=bark_voice_preset
     )
     inputs_bark = {k: v.to(device) for k, v in inputs_bark.items()}
 
-    logger.info("Generating singing with Bark AutoModel (using default temperatures)...")
-    # Generate using default temperatures to avoid validation errors with base generate
-    speech_output_automodel = model_bark.generate(
-        **inputs_bark,
-        do_sample=True,
-    ).cpu() # Move to CPU
+   
+    logger.info("Generating singing with Bark...")
+    # Generate speech - Use generate directly
+    # REMOVED explicit max_new_tokens=512 because it conflicts with args in inputs_bark
+    with torch.no_grad(): # Good practice for inference
+      speech_output_automodel = model_bark.generate(
+          **inputs_bark, # Pass processor output containing input_ids, attention_mask, and potentially generation args
+          do_sample=True,
+          semantic_temperature=0.7, # Keep these commented unless needed and tested
+          coarse_temperature=0.7,
+          fine_temperature=0.7,
+          pad_token_id=processor_bark.tokenizer.pad_token_id # Ensure padding token is set
+      ).cpu() # Move to CPU after generation
 
-    vocal_sample_rate = model_bark.generation_config.sample_rate # Get actual SR
-    audio_data_vocals = speech_output_automodel.squeeze() # Remove batch dim
+    vocal_sample_rate = model_bark.generation_config.sample_rate
+    # *** Important Check after generation ***
+    if speech_output_automodel is None or speech_output_automodel.numel() == 0:
+        logger.error("Bark generation resulted in empty tensor.")
+        raise ValueError("Bark generation failed, output is empty.")
+
+    audio_data_vocals = speech_output_automodel.squeeze() # Now should be safe to squeeze
 
     logger.info(f"Vocals generated (Sample Rate: {vocal_sample_rate})")
 
-    # Calculate duration
-    if audio_data_vocals is not None and hasattr(audio_data_vocals, 'shape'):
-        num_samples = audio_data_vocals.shape[-1]
+    # Duration calculation - ensure audio_data_vocals is valid first
+    if audio_data_vocals is not None and isinstance(audio_data_vocals, torch.Tensor) and audio_data_vocals.ndim == 1:
+        num_samples = audio_data_vocals.shape[0]
         vocals_duration_sec = num_samples / vocal_sample_rate
         logger.info(f"Calculated vocal duration: {vocals_duration_sec:.2f} seconds")
+        if vocals_duration_sec < 1.0:
+             logger.warning("Generated vocals seem very short.")
     else:
-        logger.error("Failed to get valid audio data shape for duration calculation.")
-        raise ValueError("Could not calculate vocal duration") # Stop if duration unknown
+        logger.error(f"Failed to get valid 1D audio data shape for duration calculation after generation. Shape: {audio_data_vocals.shape if audio_data_vocals is not None else 'None'}")
+        # If squeeze failed or tensor is wrong shape, handle it
+        # You might attempt to recover or raise an error
+        if isinstance(audio_data_vocals, torch.Tensor):
+             logger.info(f"Attempting to flatten tensor of shape {audio_data_vocals.shape}")
+             audio_data_vocals = audio_data_vocals.flatten()
+             if audio_data_vocals.ndim == 1:
+                 num_samples = audio_data_vocals.shape[0]
+                 vocals_duration_sec = num_samples / vocal_sample_rate
+                 logger.info(f"Calculated vocal duration after flattening: {vocals_duration_sec:.2f} seconds")
+             else:
+                  raise ValueError("Could not calculate vocal duration - tensor shape issue persists after flatten.")
+        else:
+             raise ValueError("Could not calculate vocal duration - audio_data_vocals is not a tensor.")
 
-    # Save Vocals
+
     bark_success = save_audio_robust(audio_data_vocals, output_vocals_filename, vocal_sample_rate)
 
 except Exception as e:
     logger.error(f"Error during Bark vocal generation: {e}", exc_info=True)
+    # bark_success remains False
 finally:
-    # Clean up Bark resources
+    logger.info("Cleaning Bark resources...")
+    # Check if variables exist before deleting, more robust for finally block
     if 'model_bark' in locals() and model_bark is not None: del model_bark
     if 'processor_bark' in locals() and processor_bark is not None: del processor_bark
     if 'inputs_bark' in locals() and inputs_bark is not None: del inputs_bark
+    # Check if speech_output_automodel was defined before trying to delete
     if 'speech_output_automodel' in locals() and speech_output_automodel is not None: del speech_output_automodel
-    if 'audio_data_vocals' in locals() and audio_data_vocals is not None: del audio_data_vocals # Keep if needed later? No, combine loads from file.
+    if 'audio_data_vocals' in locals() and audio_data_vocals is not None: del audio_data_vocals # Can delete here now
     if torch.cuda.is_available(): torch.cuda.empty_cache()
     logger.info("Cleaned Bark resources.")
 
@@ -1026,36 +1052,73 @@ synthesiser_musicgen = None
 music_output = None
 audio_data_musicgen = None
 musicgen_success = False
-sampling_rate_musicgen = 32000 # MusicGen default, will be updated
+sampling_rate_musicgen = 32000 # MusicGen default
 
-if bark_success and vocals_duration_sec > 1.0: # Only proceed if vocals were saved and have some length
+if bark_success and vocals_duration_sec > 0.5: # Proceed if vocals saved and have *some* length
     try:
-        logger.info(f"\n--- 2. Initializing MusicGen ({musicgen_model_id}) for Instrumental ---")
-        # Check disk space? Optional. Assume user confirmed space is okay.
-        synthesiser_musicgen = pipeline("text-to-audio", model=musicgen_model_id, device=device)
+        logger.info(f"\n--- 2. Initializing MusicGen ({musicgen_model_id}) ---")
 
-        logger.info(f"Generating instrumental music for description: '{music_style_description}'")
-        logger.info(f"Aiming for duration: {vocals_duration_sec:.2f} seconds (matching vocals)")
+        # *** Optimization Point: Add quantization if enabled ***
+        # Note: Pipeline handles model loading internally. Quantization with pipeline is trickier.
+        # It might require loading the model+processor manually first with quantization,
+        # then passing them to the pipeline, or checking pipeline documentation for quantization args.
+        # Simple approach shown here - may not apply quantization correctly with pipeline shorthand.
+        # For reliable quantization with pipeline, load model manually first.
+        pipeline_kwargs = {"device": device}
+        if use_quantization and device != torch.device("cpu"):
+             logger.warning("Quantization with `pipeline()` shorthand might be unreliable. Consider loading model manually for guaranteed quantization.")
+             # This is illustrative - pipeline might ignore these or need different args
+             # pipeline_kwargs['model_kwargs'] = {"load_in_8bit": True} if quantization_type=="8bit" else {"load_in_4bit": True}
 
-        # Use duration parameter directly
-        music_output = synthesiser_musicgen(music_style_description, forward_params={"do_sample": True, "duration": vocals_duration_sec})
 
+        # Using pipeline for simplicity here
+        synthesiser_musicgen = pipeline("text-to-audio", model=musicgen_model_id, **pipeline_kwargs)
+
+        # Ensure duration is reasonable
+        target_duration = max(1.0, vocals_duration_sec) # Ensure at least 1 second
+        logger.info(f"Generating instrumental music for: '{music_style_description}'")
+        logger.info(f"Target duration: {target_duration:.2f} seconds")
+        
+        tokens_per_second = 50
+        # Ensure we generate at least a minimum number of tokens
+        min_tokens = 50 # Corresponds to 1 second, adjust if needed
+        max_new_tokens = max(min_tokens, int(target_duration * tokens_per_second))
+        logger.info(f"Calculated max_new_tokens: {max_new_tokens} (Target duration: {target_duration:.2f}s @ {tokens_per_second} tokens/sec)")
+
+        # Define forward parameters using max_new_tokens
+        forward_params = {
+            "do_sample": True,
+            "max_new_tokens": max_new_tokens,
+            # You can add other valid generate arguments here if needed, e.g.:
+            "temperature": 0.9,
+            "guidance_scale": 3.0
+        }
+        # Generate music
+        # Generate music using the corrected forward_params
+        music_output = synthesiser_musicgen(
+             music_style_description,
+             forward_params=forward_params # Pass the corrected dictionary
+        )
+        
         if isinstance(music_output, dict) and "audio" in music_output and "sampling_rate" in music_output:
-            audio_data_musicgen = music_output["audio"]
-            sampling_rate_musicgen = music_output["sampling_rate"] # Get actual SR
+            audio_data_musicgen = music_output["audio"] # This might be multi-channel
+            sampling_rate_musicgen = music_output["sampling_rate"]
             logger.info(f"Instrumental audio generated (Sample Rate: {sampling_rate_musicgen})")
-            # Save Instrumental
+
+            # Save Instrumental (save_audio_robust handles making it mono)
             musicgen_success = save_audio_robust(audio_data_musicgen, output_instrumental_filename, sampling_rate_musicgen)
         else:
-            logger.warning(f"Unexpected output format from MusicGen pipeline: {type(music_output)}")
+            logger.error(f"Unexpected output format from MusicGen pipeline: {type(music_output)}")
+            if isinstance(music_output, dict): logger.error(f"Keys: {music_output.keys()}")
+
 
     except Exception as e:
         logger.error(f"Error during MusicGen instrumental generation: {e}", exc_info=True)
     finally:
-        # Clean up MusicGen resources
-        if 'synthesiser_musicgen' in locals() and synthesiser_musicgen is not None: del synthesiser_musicgen
-        if 'music_output' in locals() and music_output is not None: del music_output
-        if 'audio_data_musicgen' in locals() and audio_data_musicgen is not None: del audio_data_musicgen
+        logger.info("Cleaning MusicGen resources...")
+        del synthesiser_musicgen
+        del music_output
+        del audio_data_musicgen
         if torch.cuda.is_available(): torch.cuda.empty_cache()
         logger.info("Cleaned MusicGen pipeline resources.")
 elif not bark_success:
@@ -1067,14 +1130,13 @@ else:
 # --- 3. Combine Audio Tracks ---
 if bark_success and musicgen_success:
     logger.info("\n--- 3. Combining Vocals and Instrumental ---")
-    # Determine target sample rate for combination (use MusicGen's rate)
-    target_sr_combine = sampling_rate_musicgen
+    target_sr_combine = sampling_rate_musicgen # Use MusicGen's SR as target
 
     combine_success = combine_audio(
         output_vocals_filename,
         output_instrumental_filename,
         output_combined_filename,
-        target_sr=target_sr_combine # Resample both to MusicGen's rate if needed
+        target_sr=target_sr_combine
     )
 
     if combine_success:
