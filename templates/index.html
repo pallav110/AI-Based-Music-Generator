@@ -507,6 +507,56 @@
                 });
             });
             
+            // Add these event listeners after your existing code
+            document.getElementById('copy-refined-lyrics-btn').addEventListener('click', function() {
+                // Get the refined lyrics text
+                const refinedLyrics = document.getElementById('refined-lyrics-result').textContent;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(refinedLyrics).then(() => {
+                    // Show success message
+                    const status = document.getElementById('lyrics-status');
+                    status.textContent = 'Refined lyrics copied to clipboard!';
+                    status.className = 'status status-success';
+                    status.style.display = 'block';
+                    
+                    // Hide after 3 seconds
+                    setTimeout(() => {
+                        status.style.display = 'none';
+                    }, 3000);
+                }).catch(err => {
+                    console.error('Failed to copy lyrics: ', err);
+                    const status = document.getElementById('lyrics-status');
+                    status.textContent = 'Failed to copy lyrics';
+                    status.className = 'status status-error';
+                    status.style.display = 'block';
+                });
+            });
+
+            document.getElementById('use-refined-for-music-btn').addEventListener('click', function() {
+                // Get the refined lyrics text
+                const refinedLyrics = document.getElementById('refined-lyrics-result').textContent;
+                
+                // Set the lyrics in the music generator textarea
+                document.getElementById('lyrics').value = refinedLyrics;
+                
+                // Scroll to the music generator section smoothly
+                document.querySelector('#music-generator-form').scrollIntoView({
+                    behavior: 'smooth'
+                });
+                
+                // Show success message
+                const status = document.getElementById('lyrics-status');
+                status.textContent = 'Refined lyrics loaded into music generator!';
+                status.className = 'status status-success';
+                status.style.display = 'block';
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            });
+
             // Music Generation Form
             const musicForm = document.getElementById('music-generator-form');
             const musicResultContainer = document.getElementById('music-result-container');
