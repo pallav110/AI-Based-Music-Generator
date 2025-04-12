@@ -362,6 +362,21 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Add this after the lyrics-result-container -->
+            <div class="result-container" id="refined-lyrics-container" style="display: none;">
+                <h3 class="result-title">Refined Lyrics <span class="ai-badge">AI Enhanced</span></h3>
+                <div class="lyrics-result" id="refined-lyrics-result"></div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="copy-refined-lyrics-btn">
+                        <i class="fas fa-copy"></i> Copy Refined Lyrics
+                    </button>
+                    <button class="btn btn-secondary" id="use-refined-for-music-btn">
+                        <i class="fas fa-music"></i> Use for Music Generation
+                    </button>
+                </div>
+            </div>
         </section>
         
         <!-- Music Generator Section -->
@@ -404,61 +419,69 @@
             
             // Lyrics Generation Form
             const lyricsForm = document.getElementById('lyrics-generator-form');
-            const lyricsResultContainer = document.getElementById('lyrics-result-container');
             const lyricsResult = document.getElementById('lyrics-result');
+            const refinedLyricsResult = document.getElementById('refined-lyrics-result');
+            const lyricsResultContainer = document.getElementById('lyrics-result-container');
+            const refinedLyricsContainer = document.getElementById('refined-lyrics-container');
             const lyricsStatus = document.getElementById('lyrics-status');
             const generateLyricsBtn = document.getElementById('generate-lyrics-btn');
             const lyricsBtnText = document.getElementById('lyrics-btn-text');
-            
+
+            // Modify your existing lyrics form submission handler
             lyricsForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                console.log("Form submitted"); // Debug log
                 
                 // Reset UI
                 lyricsResultContainer.style.display = 'none';
+                refinedLyricsContainer.style.display = 'none';
                 lyricsStatus.style.display = 'none';
                 
                 // Show loading state
                 generateLyricsBtn.disabled = true;
                 lyricsBtnText.innerHTML = '<span class="spinner"></span> Generating...';
-                
-                // Get form data
-                const formData = new FormData(lyricsForm);
+                console.log("UI reset and loading state shown"); // Debug log
                 
                 try {
-                    // Send request to server
+                    console.log("Making API request..."); // Debug log
                     const response = await fetch('/generate_lyrics', {
                         method: 'POST',
-                        body: formData
+                        body: new FormData(lyricsForm)
                     });
                     
+                    console.log("Response received:", response); // Debug log
                     const data = await response.json();
+                    console.log("Response data:", data); // Debug log
                     
                     if (data.success) {
-                        // Display results
-                        lyricsResult.textContent = data.lyrics;
-                        lyricsResultContainer.style.display = 'block';
+                        console.log("Success - displaying lyrics"); // Debug log
+                        lyricsResult.textContent = data.initial_lyrics;
+                        refinedLyricsResult.textContent = data.refined_lyrics;
                         
-                        // Show success message
-                        lyricsStatus.textContent = 'Lyrics generated successfully!';
+                        lyricsResultContainer.style.display = 'block';
+                        refinedLyricsContainer.style.display = 'block';
+                        
+                        lyricsStatus.textContent = 'Lyrics generated and enhanced with AI!';
                         lyricsStatus.className = 'status status-success';
                         lyricsStatus.style.display = 'block';
                     } else {
-                        // Show error message
+                        console.log("Error from server:", data.error); // Debug log
                         lyricsStatus.textContent = data.error || 'Error generating lyrics';
                         lyricsStatus.className = 'status status-error';
                         lyricsStatus.style.display = 'block';
                     }
                 } catch (error) {
+                    console.error("Fetch error:", error); // Debug log
                     lyricsStatus.textContent = 'Error connecting to server';
                     lyricsStatus.className = 'status status-error';
                     lyricsStatus.style.display = 'block';
                 } finally {
-                    // Reset button state
                     generateLyricsBtn.disabled = false;
                     lyricsBtnText.textContent = 'Generate Lyrics';
+                    console.log("Request completed"); // Debug log
                 }
             });
-            
+
             // Copy lyrics button
             document.getElementById('copy-lyrics-btn').addEventListener('click', function() {
                 navigator.clipboard.writeText(lyricsResult.textContent).then(() => {

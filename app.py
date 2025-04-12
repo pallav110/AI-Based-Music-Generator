@@ -1,3 +1,10 @@
+import requests
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
 from flask import Flask, request, render_template, jsonify, send_file
 import torch
 import numpy as np
@@ -1192,6 +1199,91 @@ initialize_lyrics_model()
 
 # ================ FLASK ROUTES ================
 
+def refine_lyrics_with_llm(lyrics, emotion, structure):
+    """Refine lyrics using Gemini 2.0 Flash with proper error handling"""
+    try:
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            print("⚠️ Gemini API key not found in environment variables")
+            return lyrics
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        
+        prompt = f"""As a professional songwriter, refine these lyrics while maintaining:
+- Emotion: {emotion}
+- Structure: {structure}
+- Core themes
+
+Improve by:
+1. Enhancing poetic language
+2. Strengthening emotional impact
+3. Improving rhythm and flow
+4. Ensuring singability
+
+Important:
+- Preserve ALL section markers (e.g., [VERSE], [CHORUS]) exactly
+- Keep same structure and length
+- Return ONLY the refined lyrics with no additional text
+
+Original lyrics:
+{lyrics}"""
+
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }],
+            "generationConfig": {
+                "temperature": 0.7,
+                "topP": 0.9,
+                "topK": 40,
+                "maxOutputTokens": 2000
+            },
+            "safetySettings": [
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                }
+            ]
+        }
+
+        response = requests.post(
+            url,
+            headers={'Content-Type': 'application/json'},
+            json=payload
+        )
+        
+        # Check for HTTP errors
+        response.raise_for_status()
+        
+        response_data = response.json()
+        
+        # Validate response structure
+        if not response_data.get('candidates'):
+            print("⚠️ No candidates in response")
+            return lyrics
+            
+        if not response_data['candidates'][0]['content']['parts']:
+            print("⚠️ No content in response")
+            return lyrics
+            
+        refined_lyrics = response_data['candidates'][0]['content']['parts'][0]['text']
+        
+        # Clean up response
+        refined_lyrics = refined_lyrics.strip()
+        
+        # Remove markdown code blocks if present
+        if refined_lyrics.startswith('```') and refined_lyrics.endswith('```'):
+            refined_lyrics = refined_lyrics[3:-3].strip()
+            
+        return refined_lyrics
+    
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ API request failed: {str(e)}")
+    except Exception as e:
+        print(f"⚠️ Unexpected error: {str(e)}")
+    
+    return lyrics  # Fallback to original lyrics
+    
 @app.route('/')
 def index():
     """Render the main page with options for both music and lyrics generation"""
@@ -1307,6 +1399,7 @@ def download_music(job_id):
 
 @app.route('/generate_lyrics', methods=['POST'])
 def generate_lyrics():
+    print("generate_lyrics endpoint hit")  # Debug log
     if not lyrics_model_initialized:
         return jsonify({
             'success': False,
@@ -1332,16 +1425,20 @@ def generate_lyrics():
         })
     
     try:
-        # Generate the song
-        lyrics = lyrics_generator.generate_song(
+        # Generate the initial lyrics
+        initial_lyrics = lyrics_generator.generate_song(
             seed=seed,
             emotion=emotion,
             song_structure=song_structure
         )
         
+        # Automatically refine the lyrics with higher-level LLM
+        refined_lyrics = refine_lyrics_with_llm(initial_lyrics, emotion, structure_string)
+        
         return jsonify({
             'success': True,
-            'lyrics': lyrics
+            'initial_lyrics': initial_lyrics,  # For debugging/optional display
+            'refined_lyrics': refined_lyrics    # The enhanced version to display
         })
     except Exception as e:
         traceback.print_exc()
