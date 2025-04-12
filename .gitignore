@@ -17,3 +17,6 @@
 /.env
 /*.env
 
+/src/
+/updated_index.html
+
