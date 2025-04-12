@@ -299,6 +299,34 @@
                 width: 100%;
             }
         }
+        /* Add to your existing CSS */
+        #copy-refined-lyrics-btn:hover, #use-refined-for-music-btn:hover {
+            background-color: var(--accent);
+            color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #copy-refined-lyrics-btn:active, #use-refined-for-music-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .action-buttons .btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
