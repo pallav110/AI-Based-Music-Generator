@@ -124,13 +124,13 @@
 # # Example Usage
 # if __name__ == "__main__":
 #     lyrics = """I'm sure I've seen you
-#     I see the fire in your eyes 
-#     It makes me feel, it's taking my dreams
-#     I'm feeling like ain't the first time we ever meet
-#     You make the time fly slow, slow
-#     Just like slow rivers flow, slow
-#     Dance with me like it's my party
-#     We go wild, we're in safari
+    # I see the fire in your eyes 
+    # It makes me feel, it's taking my dreams
+    # I'm feeling like ain't the first time we ever meet
+    # You make the time fly slow, slow
+    # Just like slow rivers flow, slow
+    # Dance with me like it's my party
+    # We go wild, we're in safari
 #     """
 
 #     generator = AI_LyricsToMusic()

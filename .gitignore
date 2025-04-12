@@ -3,3 +3,9 @@
 /*.sf2
 /generated_audio
 /generated_audio_optimized
+/*.wav
+/*.pth
+/*.csv
+/so-vits-svc
+/so-vits-svc
+

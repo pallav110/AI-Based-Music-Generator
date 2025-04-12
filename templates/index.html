@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 200px;
+        }
+        .progress {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            height: 1.5rem;
+        }
+        .audio-player {
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .generation-info {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .help-text {
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .status {
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .result {
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+        .loading {
+            text-align: center;
+            display: none;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3498db;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AI Lyrics Generator</h1>
+
+    <div class="container">
+        <div id="status-box"></div>
+
+        <form id="generator-form">
+            <div class="form-group">
+                <label for="seed">Seed (optional)</label>
+                <input type="text" id="seed" name="seed" placeholder="Enter a few words to start your lyrics">
+            </div>
+
+            <div class="form-group">
+                <label for="emotion">Emotion</label>
+                <select id="emotion" name="emotion">
+                    <!-- Will be populated dynamically -->
+                    <option value="happy">happy</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="structure">Song Structure (comma separated)</label>
+                <input type="text" id="structure" name="structure" placeholder="verse, chorus, verse, chorus, bridge, chorus">
+            </div>
+
+            <button type="submit" id="generate-btn">Generate Lyrics</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating lyrics... This may take a minute.</p>
+        </div>
+
+        <div id="result-container" style="display: none;">
+            <h3>Generated Lyrics</h3>
+            <div id="lyrics-result" class="result"></div>
+            
+            <button id="copy-btn" style="margin-top: 15px;">Copy to Clipboard</button>
+        </div>
+    </div>
+
+
+    <div class="container main-container">
+        <h1 class="text-center mb-4">🎵 AI Music Generator</h1>
+        <div class="help-text">
+            <p>Enter lyrics with section markers like [VERSE], [CHORUS], etc. to generate music that follows your song structure.</p>
+        </div>
+        <form id="generationForm">
+            <div class="mb-3">
+                <label for="lyrics" class="form-label">Song Lyrics:</label>
+                <textarea class="form-control" id="lyrics" name="lyrics" required placeholder="Enter your lyrics with section markers like [VERSE], [CHORUS], [BRIDGE], etc."></textarea>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary" id="generateBtn">Generate Music</button>
+            </div>
+        </form>
+        
+        <div id="generatingStatus" class="mt-4 d-none">
+            <h4 id="statusText">Processing...</h4>
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progressBar"></div>
+            </div>
+            <div class="generation-info">
+                <p>The AI is analyzing your lyrics, determining the musical style, and generating the composition. This typically takes 30-60 seconds.</p>
+            </div>
+        </div>
+        
+        <div id="resultSection" class="mt-4 d-none">
+            <h4>Your Generated Song</h4>
+            <audio controls id="audioPlayer" class="audio-player"></audio>
+            <div class="d-grid gap-2 mt-3">
+                <a id="downloadBtn" class="btn btn-success" download>Download Song</a>
+                <button id="newSongBtn" class="btn btn-outline-primary">Generate Another Song</button>
+            </div>
+        </div>
+        
+        <div id="errorSection" class="mt-4 d-none alert alert-danger">
+            <h4>Error</h4>
+            <p id="errorText"></p>
+            <button id="tryAgainBtn" class="btn btn-outline-danger">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+                // Check if the model is initialized on page load
+                document.addEventListener('DOMContentLoaded', async () => {
+                    try {
+                        // Check health
+                        const response = await fetch('/health');
+                        const data = await response.json();
+                        
+                        if (!data.model_initialized) {
+                            showStatus('Model not initialized. Please check server logs.', 'error');
+                        }
+                        
+                        // Populate emotions dropdown
+                        if (data.emotions && data.emotions.length > 0) {
+                            const emotionSelect = document.getElementById('emotion');
+                            emotionSelect.innerHTML = '';
+                            
+                            data.emotions.forEach(emotion => {
+                                const option = document.createElement('option');
+                                option.value = emotion;
+                                option.textContent = emotion;
+                                emotionSelect.appendChild(option);
+                            });
+                        }
+                        
+                        // Load recommended structure
+                        loadSongStructures();
+                        
+                    } catch (error) {
+                        console.error('Error checking health:', error);
+                        showStatus('Error connecting to server', 'error');
+                    }
+                });
+                
+                // Load song structures
+                async function loadSongStructures() {
+                    try {
+                        const response = await fetch('/api/song_structure');
+                        const data = await response.json();
+                        
+                        if (data.success && data.structures.length > 0) {
+                            // Set default structure
+                            document.getElementById('structure').value = data.structures[0].join(', ');
+                        }
+                    } catch (error) {
+                        console.error('Error loading song structures:', error);
+                    }
+                }
+                
+                // Form submission
+                document.getElementById('generator-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    // Clear previous results
+                    document.getElementById('result-container').style.display = 'none';
+                    document.getElementById('lyrics-result').textContent = '';
+                    
+                    // Show loading
+                    document.getElementById('loading').style.display = 'block';
+                    
+                    // Get form data
+                    const formData = new FormData(e.target);
+                    
+                    try {
+                        const response = await fetch('/generate', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        // Hide loading
+                        document.getElementById('loading').style.display = 'none';
+                        
+                        if (data.success) {
+                            // Show results
+                            document.getElementById('lyrics-result').textContent = data.lyrics;
+                            document.getElementById('result-container').style.display = 'block';
+                        } else {
+                            showStatus(data.error, 'error');
+                        }
+                        
+                    } catch (error) {
+                        console.error('Error generating lyrics:', error);
+                        document.getElementById('loading').style.display = 'none';
+                        showStatus('Error connecting to server', 'error');
+                    }
+                });
+                
+                // Copy to clipboard
+                document.getElementById('copy-btn').addEventListener('click', () => {
+                    const lyrics = document.getElementById('lyrics-result').textContent;
+                    navigator.clipboard.writeText(lyrics).then(() => {
+                        showStatus('Copied to clipboard!', 'success');
+                    }).catch(err => {
+                        console.error('Error copying text:', err);
+                        showStatus('Failed to copy to clipboard', 'error');
+                    });
+                });
+                
+                // Helper to show status messages
+                function showStatus(message, type) {
+                    const statusBox = document.getElementById('status-box');
+                    statusBox.textContent = message;
+                    statusBox.className = `status ${type}`;
+                    
+                    // Auto-hide success messages after 5 seconds
+                    if (type === 'success') {
+                        setTimeout(() => {
+                            statusBox.textContent = '';
+                            statusBox.className = 'status';
+                        }, 5000);
+                    }
+                }
+
+
+
+
+
+
+                
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('generationForm');
+            const generateBtn = document.getElementById('generateBtn');
+            const generatingStatus = document.getElementById('generatingStatus');
+            const resultSection = document.getElementById('resultSection');
+            const errorSection = document.getElementById('errorSection');
+            const statusText = document.getElementById('statusText');
+            const progressBar = document.getElementById('progressBar');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const newSongBtn = document.getElementById('newSongBtn');
+            const tryAgainBtn = document.getElementById('tryAgainBtn');
+            const errorText = document.getElementById('errorText');
+            
+            let jobId = null;
+            let statusCheckInterval = null;
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get form data
+                const formData = new FormData(form);
+                
+                // Disable form and show generating status
+                generateBtn.disabled = true;
+                generatingStatus.classList.remove('d-none');
+                resultSection.classList.add('d-none');
+                errorSection.classList.add('d-none');
+                
+                // Start generation
+                fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showError(data.error);
+                        return;
+                    }
+                    
+                    jobId = data.job_id;
+                    statusText.textContent = 'Queued...';
+                    progressBar.style.width = '5%';
+                    
+                    // Start checking status
+                    startStatusCheck();
+                })
+                .catch(error => {
+                    showError("Failed to start generation: " + error.message);
+                });
+            });
+            
+            function startStatusCheck() {
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                }
+                
+statusCheckInterval = setInterval(() => {
+                    if (!jobId) {
+                        clearInterval(statusCheckInterval);
+                        return;
+                    }
+                    
+                    fetch(`/status/${jobId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Update progress
+                            progressBar.style.width = `${data.progress}%`;
+                            
+                            if (data.status === 'queued') {
+                                statusText.textContent = 'Queued...';
+                            } else if (data.status === 'processing') {
+                                statusText.textContent = 'Generating your music...';
+                            } else if (data.status === 'completed') {
+                                statusText.textContent = 'Complete!';
+                                showResult(data.download_url);
+                                clearInterval(statusCheckInterval);
+                            } else if (data.status === 'failed') {
+                                showError(data.error || 'Generation failed');
+                                clearInterval(statusCheckInterval);
+                            }
+                        })
+                        .catch(error => {
+                            showError("Failed to check status: " + error.message);
+                            clearInterval(statusCheckInterval);
+                        });
+                }, 2000); // Check every 2 seconds
+            }
+            
+            function showResult(downloadUrl) {
+                // Hide status and show result
+                generatingStatus.classList.add('d-none');
+                resultSection.classList.remove('d-none');
+                
+                // Set audio source and download link
+                audioPlayer.src = downloadUrl;
+                downloadBtn.href = downloadUrl;
+                
+                // Re-enable form
+                generateBtn.disabled = false;
+            }
+            
+            function showError(message) {
+                // Hide status and show error
+                generatingStatus.classList.add('d-none');
+                errorSection.classList.remove('d-none');
+                
+                // Set error message
+                errorText.textContent = message || 'An unknown error occurred';
+                
+                // Re-enable form
+                generateBtn.disabled = false;
+            }
+            
+            // New song button handler
+            newSongBtn.addEventListener('click', function() {
+                resultSection.classList.add('d-none');
+                form.reset();
+            });
+            
+            // Try again button handler
+            tryAgainBtn.addEventListener('click', function() {
+                errorSection.classList.add('d-none');
+                form.reset();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Video Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ffeb3b;
+            --secondary: #000;
+            --accent: #ff5722;
+            --text-light: #f5f5f5;
+            --text-dark: #333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: var(--secondary);
+            color: var(--primary);
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+            transition: filter 0.5s ease;
+        }
+        
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 235, 59, 0.2);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-login {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        
+        .btn-login:hover {
+            background-color: var(--primary);
+            color: var(--secondary);
+        }
+        
+        .btn-signup {
+            background-color: var(--primary);
+            color: var(--secondary);
+        }
+        
+        .btn-signup:hover {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        
+        /* Main content */
+        main {
+            padding: 120px 5% 80px;
+        }
+        
+        /* Hero section */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 80px 0;
+            position: relative;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 0.5s;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 40px;
+            color: var(--text-light);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 0.8s;
+        }
+        
+        .btn-hero {
+            background-color: var(--primary);
+            color: var(--secondary);
+            font-size: 1.1rem;
+            padding: 12px 30px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 1.1s;
+        }
+        
+        .btn-hero:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 235, 59, 0.3);
+        }
+        
+        /* Cards */
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 80px 0;
+        }
+        
+        .card {
+            background-color: rgba(30, 30, 30, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 235, 59, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: translateY(50px);
+            opacity: 0;
+            animation: floatUp 1s ease forwards;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(255, 235, 59, 0.2);
+        }
+        
+        .card:nth-child(1) {
+            animation-delay: 1.4s;
+        }
+        
+        .card:nth-child(2) {
+            animation-delay: 1.6s;
+        }
+        
+        .card:nth-child(3) {
+            animation-delay: 1.8s;
+        }
+        
+        .card h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .card p {
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+        
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        
+        /* About section */
+        .about {
+            margin: 100px 0;
+            position: relative;
+        }
+        
+        .about h2 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-align: center;
+            color: var(--primary);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 2s;
+        }
+        
+        .about-content {
+            display: flex;
+            gap: 50px;
+            align-items: center;
+        }
+        
+        .about-text {
+            flex: 1;
+            opacity: 0;
+            transform: translateX(-50px);
+            animation: fadeInRight 1s ease forwards 2.3s;
+        }
+        
+        .about-text p {
+            margin-bottom: 20px;
+            color: var(--text-light);
+            line-height: 1.8;
+        }
+        
+        .about-image {
+            flex: 1;
+            opacity: 0;
+            transform: translateX(50px);
+            animation: fadeInLeft 1s ease forwards 2.3s;
+        }
+        
+        .about-image img {
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Contact section */
+        .contact {
+            margin: 100px 0;
+            text-align: center;
+        }
+        
+        .contact h2 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            color: var(--primary);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 2.6s;
+        }
+        
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 2.9s;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            background-color: rgba(30, 30, 30, 0.7);
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: border 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn-submit {
+            background-color: var(--primary);
+            color: var(--secondary);
+            padding: 12px 40px;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 235, 59, 0.3);
+        }
+        
+        /* Test button section */
+        .test-section {
+            text-align: center;
+            margin: 100px 0;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards 3.2s;
+        }
+        
+        .test-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: var(--primary);
+        }
+        
+        .btn-test {
+            background-color: var(--primary);
+            color: var(--secondary);
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-test:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(255, 235, 59, 0.4);
+        }
+        
+        /* Footer */
+        footer {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 40px 5%;
+            text-align: center;
+            border-top: 1px solid rgba(255, 235, 59, 0.1);
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .social-links a {
+            color: var(--text-light);
+            font-size: 1.5rem;
+            transition: color 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            color: var(--primary);
+        }
+        
+        .footer-text {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInRight {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes fadeInLeft {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes floatUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background-color: rgba(30, 30, 30, 0.9);
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            position: relative;
+            animation: modalFadeIn 0.5s ease;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .close-modal:hover {
+            color: var(--primary);
+        }
+        
+        .modal h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .modal .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .modal .btn {
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        /* AI Music Generator Section */
+        .music-generator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .music-generator.active {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .music-generator-container {
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 40px;
+            box-shadow: 0 0 50px rgba(255, 235, 59, 0.2);
+            border: 1px solid rgba(255, 235, 59, 0.1);
+            position: relative;
+        }
+
+        .close-generator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 235, 59, 0.1);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .close-generator:hover {
+            color: var(--primary);
+            transform: rotate(90deg);
+            background: rgba(255, 235, 59, 0.2);
+        }
+
+        .music-generator h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: var(--primary);
+            text-align: center;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .generator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .generator-controls {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group h3 i {
+            font-size: 1.5rem;
+        }
+
+        .style-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .style-option {
+            padding: 8px 15px;
+            background: rgba(255, 235, 59, 0.1);
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            border-radius: 30px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .style-option:hover {
+            background: rgba(255, 235, 59, 0.2);
+        }
+
+        .style-option.active {
+            background: var(--primary);
+            color: var(--secondary);
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-container label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-light);
+        }
+
+        .slider-container input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: rgba(255, 235, 59, 0.2);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .lyrics-input {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            border-radius: 10px;
+            color: var(--text-light);
+            font-size: 1rem;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+
+        .lyrics-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .visualizer {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.1));
+            border-radius: 15px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .visualizer-bars {
+            display: flex;
+            align-items: flex-end;
+            height: 80%;
+            width: 90%;
+            gap: 5px;
+        }
+
+        .visualizer-bar {
+            background: var(--primary);
+            width: 10px;
+            border-radius: 5px;
+            animation: equalizer 1.5s infinite ease-in-out;
+        }
+
+        @keyframes equalizer {
+            0%, 100% {
+                height: 20%;
+            }
+            50% {
+                height: 100%;
+            }
+        }
+
+        .visualizer-bar:nth-child(1) { animation-delay: 0.1s; height: 30%; }
+        .visualizer-bar:nth-child(2) { animation-delay: 0.3s; height: 60%; }
+        .visualizer-bar:nth-child(3) { animation-delay: 0.5s; height: 40%; }
+        .visualizer-bar:nth-child(4) { animation-delay: 0.2s; height: 70%; }
+        .visualizer-bar:nth-child(5) { animation-delay: 0.4s; height: 50%; }
+        .visualizer-bar:nth-child(6) { animation-delay: 0.6s; height: 80%; }
+        .visualizer-bar:nth-child(7) { animation-delay: 0.3s; height: 30%; }
+        .visualizer-bar:nth-child(8) { animation-delay: 0.5s; height: 60%; }
+
+        .preview-image {
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            background: rgba(30, 30, 30, 0.7);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+        }
+
+        .preview-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,235,59,0.2), transparent);
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 235, 59, 0.1);
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            color: var(--primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 235, 59, 0.2);
+            transform: scale(1.1);
+        }
+
+        .control-btn.main {
+            width: 70px;
+            height: 70px;
+            font-size: 1.8rem;
+            background: rgba(255, 235, 59, 0.2);
+        }
+
+        .generate-btn {
+            padding: 15px 40px;
+            background: var(--primary);
+            color: var(--secondary);
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 235, 59, 0.3);
+        }
+
+        .camera-section {
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        .camera-preview {
+            width: 100%;
+            height: 200px;
+            background: rgba(30, 30, 30, 0.7);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .camera-btn {
+            padding: 10px 20px;
+            background: rgba(255, 235, 59, 0.1);
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            color: var(--text-light);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .camera-btn:hover {
+            background: rgba(255, 235, 59, 0.2);
+            color: var(--primary);
+        }
+
+        /* Glow effects */
+        .glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.3;
+            z-index: -1;
+        }
+        
+        .glow-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            top: -150px;
+            left: -150px;
+            animation: float 8s infinite ease-in-out;
+        }
+        
+        .glow-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent);
+            bottom: -200px;
+            right: -200px;
+            animation: float 10s infinite ease-in-out reverse;
+        }
+        
+        .glow-3 {
+            width: 200px;
+            height: 200px;
+            background: #4caf50;
+            top: 50%;
+            left: 20%;
+            animation: float 7s infinite ease-in-out 2s;
+        }
+        
+        .glow-4 {
+            width: 250px;
+            height: 250px;
+            background: #2196f3;
+            bottom: 30%;
+            right: 20%;
+            animation: float 9s infinite ease-in-out 1s;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0);
+            }
+            50% {
+                transform: translate(20px, 30px);
+            }
+        }
+        
+        /* Enhanced Realistic Light */
+        .light-container {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            perspective: 1000px;
+        }
+        
+        .light-ceiling-box {
+            position: absolute;
+            top: 0;
+            width: 80px;
+            height: 40px;
+            background: #333;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+        }
+        
+        .light-ceiling-box::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            width: 100px;
+            height: 10px;
+            background: #222;
+            border-radius: 5px;
+        }
+        
+        .light-cord {
+            position: absolute;
+            width: 3px;
+            height: 50vh;
+            background: linear-gradient(to bottom, #555, #333);
+            top: 40px;
+            transform-origin: top center;
+        }
+        
+        .light-socket {
+            position: absolute;
+            width: 30px;
+            height: 20px;
+            background: #444;
+            border-radius: 5px;
+            top: calc(50vh + 20px);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .light-socket::before {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 5px;
+            background: #222;
+            bottom: -5px;
+            border-radius: 0 0 5px 5px;
+        }
+        
+        .light-bulb {
+            width: 40px;
+            height: 60px;
+            background: #f5f5f5;
+            border-radius: 50% 50% 0 0;
+            position: absolute;
+            top: calc(50vh + 40px);
+            filter: blur(0px);
+            box-shadow: 0 0 60px 30px rgba(255,235,59,0.8), 
+                        0 0 100px 60px rgba(255,235,59,0.4);
+            cursor: pointer;
+            pointer-events: all;
+            transition: all 0.3s ease;
+            animation: flicker 3s ease-in-out infinite;
+            z-index: 2;
+        }
+        
+        .light-bulb::before {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 10px;
+            background: #888;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .light-bulb::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 15px;
+            background: #f5f5f5;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+        
+        .light-bulb.off {
+            background: #aaa;
+            box-shadow: 0 0 10px 5px rgba(102,102,102,0.1);
+            filter: blur(1px);
+            animation: none;
+        }
+        
+        .light-bulb.off::after {
+            background: #aaa;
+        }
+        
+        .light-switch {
+            position: absolute;
+            width: 30px;
+            height: 50px;
+            background: #333;
+            top: 20vh;
+            right: 10%;
+            border-radius: 5px;
+            cursor: pointer;
+            pointer-events: all;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 11;
+        }
+        
+        .light-switch::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 30px;
+            background: #444;
+            top: 10px;
+            left: 5px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+        
+        .light-switch.on::before {
+            top: 30px;
+            background: #ffeb3b;
+            box-shadow: 0 0 10px #ffeb3b;
+        }
+        
+        .light-wire {
+            position: absolute;
+            background: #555;
+            width: 2px;
+            transform-origin: top left;
+        }
+        
+        .light-wire-1 {
+            height: calc(20vh - 50px);
+            top: 50px;
+            left: calc(10% + 15px);
+        }
+        
+        .light-wire-2 {
+            height: 2px;
+            width: calc(50% - 10% - 15px);
+            top: calc(20vh - 30px);
+            left: calc(10% + 15px);
+        }
+        
+        .light-wire-3 {
+            height: calc(50vh - 20vh + 30px);
+            top: calc(20vh - 30px);
+            left: 50%;
+        }
+        
+        @keyframes flicker {
+            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 72%, 100% {
+                opacity: 1;
+                filter: brightness(1) drop-shadow(0 0 10px rgba(255,235,59,0.8));
+            }
+            20%, 21.999%, 63%, 63.999%, 65%, 71.999% {
+                opacity: 0.8;
+                filter: brightness(0.7) drop-shadow(0 0 5px rgba(255,235,59,0.4));
+            }
+        }
+        
+        @keyframes swing {
+            0%, 100% {
+                transform: rotate(-2deg);
+            }
+            50% {
+                transform: rotate(2deg);
+            }
+        }
+
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .generator-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .preview-section {
+                margin-top: 40px;
+            }
+            
+            .about-content {
+                flex-direction: column;
+            }
+            
+            .about-text, .about-image {
+                flex: none;
+                width: 100%;
+            }
+            
+            .about-image {
+                margin-top: 30px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .nav-links {
+                gap: 15px;
+            }
+            
+            .auth-buttons {
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 6px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .music-generator h2 {
+                font-size: 2rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            nav {
+                padding: 15px 5%;
+            }
+            
+            .logo-text {
+                font-size: 1.2rem;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .card-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                padding: 30px 20px;
+            }
+            
+            .music-generator-container {
+                padding: 30px 20px;
+            }
+            
+            .style-options {
+                justify-content: center;
+            }
+            
+            .preview-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+    <div class="glow glow-4"></div>
+    
+    <!-- Enhanced Realistic Hanging Light -->
+    <div class="light-container">
+        <div class="light-ceiling-box"></div>
+        <div class="light-cord" id="lightCord"></div>
+        <div class="light-socket"></div>
+        <div class="light-bulb" id="lightBulb"></div>
+        <div class="light-switch" id="lightSwitch"></div>
+        <div class="light-wire light-wire-1"></div>
+        <div class="light-wire light-wire-2"></div>
+        <div class="light-wire light-wire-3"></div>
+    </div>
+    
+    <!-- Navigation bar -->
+    <nav>
+        <div class="logo-container">
+            <div class="logo-img">MV</div>
+            <div class="logo-text">Music Video Generator</div>
+        </div>
+        
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#about">About</a>
+            <a href="#features">Features</a>
+            <a href="#contact">Contact</a>
+        </div>
+        
+        <div class="auth-buttons">
+            <button class="btn btn-login" id="loginBtn">Login</button>
+            <button class="btn btn-signup" id="signupBtn">Sign Up</button>
+        </div>
+    </nav>
+    
+    <!-- Main content -->
+    <main>
+        <!-- Hero section -->
+        <section class="hero" id="home">
+            <h1>Create Stunning Music Videos with AI</h1>
+            <p>Transform your music into captivating visual experiences with our AI-powered video generator. No technical skills required - just your creativity!</p>
+            <button class="btn btn-hero" id="heroBtn">Get Started</button>
+        </section>
+        
+        <!-- Features section -->
+        <section class="card-container" id="features">
+            <div class="card">
+                <div class="card-icon"><i class="fas fa-magic"></i></div>
+                <h2>AI-Powered Generation</h2>
+                <p>Our advanced AI analyzes your music and creates perfectly synchronized visuals that match the mood, tempo, and lyrics of your song.</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon"><i class="fas fa-sliders-h"></i></div>
+                <h2>Customizable Styles</h2>
+                <p>Choose from a variety of visual styles and themes to match your artistic vision. Fine-tune every aspect of your video.</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon"><i class="fas fa-bolt"></i></div>
+                <h2>Lightning Fast</h2>
+                <p>Generate professional-quality music videos in minutes, not days. Perfect for artists on tight deadlines.</p>
+            </div>
+        </section>
+        
+        <!-- About section -->
+        <section class="about" id="about">
+            <h2>About Our Platform</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>Music Video Generator is revolutionizing the way artists create visual content for their music. Our platform combines cutting-edge artificial intelligence with intuitive design to make professional video creation accessible to everyone.</p>
+                    <p>Founded in 2023 by a team of musicians and technologists, we understand the challenges artists face when trying to create compelling visuals on limited budgets.</p>
+                    <p>Our mission is to democratize music video production, allowing artists to focus on what they do best - creating amazing music - while we handle the visuals.</p>
+                </div>
+                <div class="about-image">
+                    <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Music production">
+                </div>
+            </div>
+        </section>
+        
+        <!-- Contact section -->
+        <section class="contact" id="contact">
+            <h2>Get In Touch</h2>
+            <form class="contact-form" id="contactForm">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" placeholder="Your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" rows="5" placeholder="Your message" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-submit">Send Message</button>
+            </form>
+        </section>
+        
+        <!-- Test section -->
+        <section class="test-section">
+            <h2>Ready to Experience the Future of Music Videos?</h2>
+            <button class="btn btn-test" id="testBtn">Test AI-Driven Music Generator</button>
+        </section>
+
+        <!-- AI Music Generator Section -->
+        <div class="music-generator" id="musicGenerator">
+            <div class="music-generator-container">
+                <div class="close-generator" id="closeGenerator">
+                    <i class="fas fa-times"></i>
+                </div>
+                <h2>AI Music Video Generator</h2>
+                
+                <div class="generator-grid">
+                    <div class="generator-controls">
+                        <div class="control-group">
+                            <h3><i class="fas fa-music"></i> Music Style</h3>
+                            <div class="style-options">
+                                <div class="style-option active">Pop</div>
+                                <div class="style-option">Rock</div>
+                                <div class="style-option">Hip Hop</div>
+                                <div class="style-option">Electronic</div>
+                                <div class="style-option">R&B</div>
+                                <div class="style-option">Jazz</div>
+                                <div class="style-option">Classical</div>
+                                <div class="style-option">Custom</div>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <h3><i class="fas fa-sliders-h"></i> Music Parameters</h3>
+                            <div class="slider-container">
+                                <label for="tempo">Tempo: <span id="tempoValue">120</span> BPM</label>
+                                <input type="range" id="tempo" min="60" max="200" value="120">
+                            </div>
+                            <div class="slider-container">
+                                <label for="energy">Energy: <span id="energyValue">70</span>%</label>
+                                <input type="range" id="energy" min="0" max="100" value="70">
+                            </div>
+                            <div class="slider-container">
+                                <label for="mood">Mood: <span id="moodValue">Neutral</span></label>
+                                <input type="range" id="mood" min="0" max="100" value="50">
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <h3><i class="fas fa-align-left"></i> Lyrics</h3>
+                            <textarea class="lyrics-input" id="lyricsInput" placeholder="Enter your lyrics here or let the AI generate them for you..."></textarea>
+                            <button class="btn btn-primary" id="generateLyricsBtn" style="width: 100%; margin-bottom: 15px;">
+                                <i class="fas fa-wand-magic-sparkles"></i> Generate Lyrics
+                            </button>
+                        </div>
+                        
+                        <div class="control-group">
+                            <h3><i class="fas fa-film"></i> Video Style</h3>
+                            <div class="style-options" id="videoStyles">
+                                <div class="style-option active">Abstract</div>
+                                <div class="style-option">Neon</div>
+                                <div class="style-option">Nature</div>
+                                <div class="style-option">Urban</div>
+                                <div class="style-option">Retro</div>
+                                <div class="style-option">Futuristic</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-section">
+                        <div class="visualizer">
+                            <div class="visualizer-bars">
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="preview-image" id="previewImage">
+                            <img src="https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1413&q=80" alt="Music visual">
+                        </div>
+                        
+                        <div class="preview-controls">
+                            <button class="control-btn" id="prevBtn">
+                                <i class="fas fa-step-backward"></i>
+                            </button>
+                            <button class="control-btn main" id="playBtn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="control-btn" id="nextBtn">
+                                <i class="fas fa-step-forward"></i>
+                            </button>
+                        </div>
+                        
+                        <button class="generate-btn" id="generateVideoBtn">
+                            <i class="fas fa-bolt"></i> Generate Music Video
+                        </button>
+                        
+                        <div class="camera-section">
+                            <h3 style="color: var(--primary); text-align: center; margin-bottom: 15px;">
+                                <i class="fas fa-camera"></i> Record Your Performance
+                            </h3>
+                            <div class="camera-preview">
+                                <video id="cameraFeed" autoplay muted></video>
+                                <div style="position: absolute; color: var(--text-light);">
+                                    <i class="fas fa-camera" style="font-size: 2rem;"></i>
+                                    <p>Camera preview</p>
+                                </div>
+                            </div>
+                            <div class="camera-controls">
+                                <button class="camera-btn" id="startRecordingBtn">
+                                    <i class="fas fa-video"></i> Start Recording
+                                </button>
+                                <button class="camera-btn" id="stopRecordingBtn" disabled>
+                                    <i class="fas fa-stop"></i> Stop
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="logo-container">
+                <div class="logo-img">MV</div>
+                <div class="logo-text">Music Video Generator</div>
+            </div>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+            <p class="footer-text">&copy; 2023 Music Video Generator. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Login to Your Account</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-login">Login</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Create Your Account</h2>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupConfirm">Confirm Password</label>
+                    <input type="password" id="signupConfirm" placeholder="Confirm your password" required>
+                </div>
+                <button type="submit" class="btn btn-signup">Sign Up</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Enhanced Light Bulb Interaction
+        const lightBulb = document.getElementById('lightBulb');
+        const lightSwitch = document.getElementById('lightSwitch');
+        const lightCord = document.getElementById('lightCord');
+        let isLightOn = true;
+        let swingInterval;
+        let mediaRecorder;
+        let recordedChunks = [];
+        let isPlaying = false;
+        let audioContext;
+        let analyser;
+        let dataArray;
+        let animationId;
+
+        // Initialize swinging animation
+        function startSwinging() {
+            let angle = -2;
+            let direction = 1;
+            const speed = 0.05;
+            
+            swingInterval = setInterval(() => {
+                angle += speed * direction;
+                
+                if (angle > 2) direction = -1;
+                if (angle < -2) direction = 1;
+                
+                lightCord.style.transform = `rotate(${angle}deg)`;
+            }, 16);
+        }
+
+        // Random flicker effect
+        function randomFlicker() {
+            if (!isLightOn) return;
+            
+            // Random chance of a stronger flicker
+            if (Math.random() < 0.02) {
+                lightBulb.style.animation = 'none';
+                setTimeout(() => {
+                    lightBulb.style.animation = 'flicker 3s ease-in-out infinite';
+                }, 100);
+            }
+            
+            // Random subtle brightness changes
+            if (Math.random() < 0.3) {
+                const brightness = 0.9 + Math.random() * 0.2;
+                lightBulb.style.filter = `brightness(${brightness}) drop-shadow(0 0 10px rgba(255,235,59,0.8))`;
+                setTimeout(() => {
+                    lightBulb.style.filter = 'brightness(1) drop-shadow(0 0 10px rgba(255,235,59,0.8))';
+                }, 50 + Math.random() * 100);
+            }
+            
+            setTimeout(randomFlicker, 1000 + Math.random() * 3000);
+        }
+
+        // Toggle light
+        function toggleLight() {
+            isLightOn = !isLightOn;
+            
+            if (isLightOn) {
+                lightBulb.classList.remove('off');
+                lightSwitch.classList.add('on');
+                document.body.style.filter = 'brightness(1)';
+                startSwinging();
+                setTimeout(randomFlicker, 1000);
+            } else {
+                lightBulb.classList.add('off');
+                lightSwitch.classList.remove('on');
+                document.body.style.filter = 'brightness(0.7)';
+                clearInterval(swingInterval);
+            }
+        }
+
+        // Initialize light
+        lightSwitch.classList.add('on');
+        startSwinging();
+        setTimeout(randomFlicker, 1000);
+
+        // Event listeners
+        lightBulb.addEventListener('click', toggleLight);
+        lightSwitch.addEventListener('click', toggleLight);
+
+        // Make bulb draggable (for realistic swinging)
+        let isDragging = false;
+        let startY, startAngle;
+
+        lightBulb.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            startAngle = parseFloat(lightCord.style.transform.replace('rotate(', '').replace('deg)', '')) || 0;
+            clearInterval(swingInterval);
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaY = e.clientY - startY;
+            let angle = startAngle + deltaY * 0.1;
+            
+            // Limit swinging angle
+            angle = Math.max(-30, Math.min(30, angle));
+            
+            lightCord.style.transform = `rotate(${angle}deg)`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            document.body.style.userSelect = '';
+            
+            // Restart swinging with physics
+            const currentAngle = parseFloat(lightCord.style.transform.replace('rotate(', '').replace('deg)', '')) || 0;
+            let velocity = 0;
+            let damping = 0.98;
+            
+            clearInterval(swingInterval);
+            
+            swingInterval = setInterval(() => {
+                // Simple physics for swinging
+                const acceleration = -0.05 * Math.sin(currentAngle * Math.PI / 180);
+                velocity += acceleration;
+                velocity *= damping;
+                angle = currentAngle + velocity;
+                
+                // Limit angle and reduce velocity when at extremes
+                if (Math.abs(angle) > 15) {
+                    velocity *= 0.9;
+                    angle = angle > 0 ? Math.min(15, angle) : Math.max(-15, angle);
+                }
+                
+                lightCord.style.transform = `rotate(${angle}deg)`;
+            }, 16);
+        });
+
+        // Modal functionality
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+        const loginModal = document.getElementById('loginModal');
+        const signupModal = document.getElementById('signupModal');
+        const closeButtons = document.querySelectorAll('.close-modal');
+        const testBtn = document.getElementById('testBtn');
+        const heroBtn = document.getElementById('heroBtn');
+        const musicGenerator = document.getElementById('musicGenerator');
+        const closeGenerator = document.getElementById('closeGenerator');
+        
+        // Open modals
+        loginBtn.addEventListener('click', function() {
+            loginModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+        
+        signupBtn.addEventListener('click', function() {
+            signupModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Close modals
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                loginModal.style.display = 'none';
+                signupModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+        });
+        
+        window.addEventListener('click', function(event) {
+            if (event.target === loginModal) {
+                loginModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+            if (event.target === signupModal) {
+                signupModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        // Form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Here you would typically handle login logic
+            alert('Login functionality will be implemented in the backend');
+            loginModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+        
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Here you would typically handle signup logic
+            const password = document.getElementById('signupPassword').value;
+            const confirm = document.getElementById('signupConfirm').value;
+            
+            if (password !== confirm) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            alert('Account created successfully! (Backend implementation pending)');
+            signupModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+
+        // Contact form submission
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Thank you for your message! We will get back to you soon.');
+            this.reset();
+        });
+
+        // Music Generator functionality
+        function openMusicGenerator() {
+            musicGenerator.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            initCamera();
+            initAudioVisualizer();
+        }
+
+        function closeMusicGenerator() {
+            musicGenerator.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            
+            // Stop camera when generator closes
+            if (cameraFeed.srcObject) {
+                cameraFeed.srcObject.getTracks().forEach(track => track.stop());
+            }
+            
+            // Stop audio visualization
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            // Stop playback if playing
+            if (isPlaying) {
+                togglePlayback();
+            }
+        }
+
+        testBtn.addEventListener('click', openMusicGenerator);
+        heroBtn.addEventListener('click', openMusicGenerator);
+        closeGenerator.addEventListener('click', closeMusicGenerator);
+
+        // Style option selection
+        const styleOptions = document.querySelectorAll('.style-option');
+        styleOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const parent = this.parentElement;
+                parent.querySelectorAll('.style-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Update preview image based on video style selection
+                if (parent.id === 'videoStyles') {
+                    updatePreviewImage(this.textContent.trim());
+                }
+            });
+        });
+
+        function updatePreviewImage(style) {
+            const images = {
+                'Abstract': 'https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1413&q=80',
+                'Neon': 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1555&q=80',
+                'Nature': 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1556&q=80',
+                'Urban': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+                'Retro': 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+                'Futuristic': 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1511&q=80'
+            };
+            
+            const previewImage = document.querySelector('#previewImage img');
+            previewImage.src = images[style] || images['Abstract'];
+        }
+
+        // Slider value updates
+        const tempoSlider = document.getElementById('tempo');
+        const tempoValue = document.getElementById('tempoValue');
+        const energySlider = document.getElementById('energy');
+        const energyValue = document.getElementById('energyValue');
+        const moodSlider = document.getElementById('mood');
+        const moodValue = document.getElementById('moodValue');
+        
+        tempoSlider.addEventListener('input', function() {
+            tempoValue.textContent = this.value;
+            updateVisualizer();
+        });
+        
+        energySlider.addEventListener('input', function() {
+            energyValue.textContent = this.value;
+            updateVisualizer();
+        });
+        
+        moodSlider.addEventListener('input', function() {
+            const mood = this.value;
+            if (mood < 30) {
+                moodValue.textContent = 'Mellow';
+            } else if (mood < 70) {
+                moodValue.textContent = 'Neutral';
+            } else {
+                moodValue.textContent = 'Energetic';
+            }
+            updateVisualizer();
+        });
+
+        // Camera access
+        const cameraFeed = document.getElementById('cameraFeed');
+        const startRecordingBtn = document.getElementById('startRecordingBtn');
+        const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+        
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                cameraFeed.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                alert("Could not access camera. Please check permissions.");
+            }
+        }
+        
+        startRecordingBtn.addEventListener('click', function() {
+            startRecordingBtn.disabled = true;
+            stopRecordingBtn.disabled = false;
+            alert("Recording started! (This would be implemented fully with MediaRecorder API)");
+        });
+        
+        stopRecordingBtn.addEventListener('click', function() {
+            startRecordingBtn.disabled = false;
+            stopRecordingBtn.disabled = true;
+            alert("Recording stopped! Video saved for processing.");
+        });
+
+        // Playback controls
+        const playBtn = document.getElementById('playBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        function togglePlayback() {
+            isPlaying = !isPlaying;
+            const icon = playBtn.querySelector('i');
+            
+            if (isPlaying) {
+                icon.classList.remove('fa-play');
+                icon.classList.add('fa-pause');
+                // In a real implementation, this would play actual audio
+                animateVisualizer();
+            } else {
+                icon.classList.remove('fa-pause');
+                icon.classList.add('fa-play');
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        }
+        
+        playBtn.addEventListener('click', togglePlayback);
+        
+        prevBtn.addEventListener('click', function() {
+            alert("Previous track (would be implemented with a playlist)");
+        });
+        
+        nextBtn.addEventListener('click', function() {
+            alert("Next track (would be implemented with a playlist)");
+        });
+
+        // Audio visualization
+        function initAudioVisualizer() {
+            // In a real implementation, this would connect to actual audio
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+        }
+        
+        function updateVisualizer() {
+            const bars = document.querySelectorAll('.visualizer-bar');
+            const energy = parseInt(energySlider.value) / 100;
+            const tempo = parseInt(tempoSlider.value);
+            const mood = parseInt(moodSlider.value) / 100;
+            
+            bars.forEach((bar, i) => {
+                // Simulate different bar behaviors based on parameters
+                const height = 20 + Math.random() * 80 * energy;
+                const speed = 0.5 + mood * 1.5;
+                
+                bar.style.height = `${height}%`;
+                bar.style.animationDuration = `${1.5 / speed}s`;
+            });
+        }
+        
+        function animateVisualizer() {
+            if (!isPlaying) return;
+            
+            // Simulate audio data
+            for (let i = 0; i < dataArray.length; i++) {
+                dataArray[i] = Math.random() * 255;
+            }
+            
+            const bars = document.querySelectorAll('.visualizer-bar');
+            const bufferLength = analyser.frequencyBinCount;
+            const sliceWidth = bufferLength / bars.length;
+            
+            for (let i = 0; i < bars.length; i++) {
+                const value = dataArray[Math.floor(i * sliceWidth)];
+                const height = (value / 255) * 100;
+                bars[i].style.height = `${height}%`;
+            }
+            
+            animationId = requestAnimationFrame(animateVisualizer);
+        }
+
+        // Generate video button
+        document.getElementById('generateVideoBtn').addEventListener('click', function() {
+            const selectedStyle = document.querySelector('#videoStyles .style-option.active').textContent;
+            const tempo = tempoSlider.value;
+            const energy = energySlider.value;
+            const mood = moodValue.textContent;
+            const lyrics = document.getElementById('lyricsInput').value;
+            
+            alert(`Generating video with:\nStyle: ${selectedStyle}\nTempo: ${tempo} BPM\nEnergy: ${energy}%\nMood: ${mood}\n\n(Backend implementation would process this)`);
+            
+            // Simulate generation time
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            this.disabled = true;
+            
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-check"></i> Video Generated!';
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fas fa-bolt"></i> Generate Music Video';
+                    this.disabled = false;
+                }, 2000);
+            }, 3000);
+        });
+
+        // Generate lyrics button
+        document.getElementById('generateLyricsBtn').addEventListener('click', function() {
+            const styles = {
+                'Pop': "Verse 1:\nShining bright under the lights\nFeeling free on Friday nights\n\nChorus:\nWe're dancing till the morning comes\nLiving life like we're the only ones",
+                'Rock': "Verse 1:\nThunder crashing, lightning strikes\nBurning through the darkest nights\n\nChorus:\nWe won't back down, we stand our ground\nThe sound of revolution's all around",
+                'Hip Hop': "Verse 1:\nStarted from the bottom now we here\nGrinding hard year after year\n\nChorus:\nStacking paper, watch it grow\nFrom the streets to the radio",
+                'Electronic': "Verse 1:\nLost in the rhythm, the beat goes on\nMoving together, we're never alone\n\nChorus:\nThe music takes us higher and higher\nBurning bright like electric fire",
+                'R&B': "Verse 1:\nLate night drives and city lights\nYour love feels so right tonight\n\nChorus:\nWrapped up in your melody\nYou're the perfect harmony",
+                'Jazz': "Verse 1:\nSmooth like whiskey, sweet like wine\nYour love plays the perfect line\n\nChorus:\nWe'll dance till the break of day\nLet the music carry us away",
+                'Classical': "Verse 1:\nMoonlight dances on the keys\nWhispering through the autumn trees\n\nChorus:\nA symphony of love so true\nComposed by me and you"
+            };
+            
+            const selectedStyle = document.querySelector('.style-options .style-option.active').textContent.trim();
+            const lyricsInput = document.getElementById('lyricsInput');
+            
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            
+            setTimeout(() => {
+                lyricsInput.value = styles[selectedStyle] || "Verse 1:\nCustom lyrics would be generated here\nBased on your selected parameters\n\nChorus:\nThe AI would create something unique\nThat matches your music perfectly";
+                this.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Lyrics';
+            }, 1500);
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+        
