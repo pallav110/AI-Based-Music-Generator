@@ -1,0 +1,2779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MelodyGen - AI Music & Lyrics Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@1.39.2/tsparticles.min.js"></script>
+    <!-- GLTF Loader for 3D models -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        :root {
+            --primary: #ffeb3b;
+            --primary-light: #ffff72;
+            --primary-dark: #c8b900;
+            --secondary: #000;
+            --accent: #ff5722;
+            --accent-light: #ff8a50;
+            --accent-dark: #c41c00;
+            --text-light: #f5f5f5;
+            --text-dark: #333;
+            --bg-dark: #121212;
+            --bg-light: #1e1e1e;
+            --bg-lighter: #2a2a2a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Loading animation */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 1s ease-out;
+        }
+        
+        .loading-logo {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .loading-bar-container {
+            width: 300px;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            transition: width 0.3s ease;
+        }
+        
+        /* Glow effects */
+        .glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.3;
+            z-index: -1;
+            animation: pulse 8s infinite alternate;
+        }
+        
+        .glow-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            top: -150px;
+            left: -150px;
+            animation-delay: 0s;
+        }
+        
+        .glow-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent);
+            bottom: -200px;
+            right: -200px;
+            animation-delay: 1s;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 0.3; }
+        }
+        
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 235, 59, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .navbar.scrolled {
+            padding: 15px 5%;
+            background-color: rgba(18, 18, 18, 0.95);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo-container:hover .logo-img {
+            transform: rotate(360deg);
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        .mobile-menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Container */
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        section {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            outline: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--secondary);
+            box-shadow: 0 4px 15px rgba(255, 235, 59, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 235, 59, 0.4);
+        }
+        
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0.1) 0%, 
+                rgba(255,255,255,0.3) 50%, 
+                rgba(255,255,255,0.1) 100%);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+        
+        .btn-primary:hover::after {
+            transform: translateX(100%);
+        }
+        
+        .btn-secondary {
+            background-color: rgba(255, 235, 59, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            backdrop-filter: blur(5px);
+        }
+        
+        .btn-secondary:hover {
+            background-color: rgba(255, 235, 59, 0.2);
+            box-shadow: 0 4px 15px rgba(255, 235, 59, 0.2);
+        }
+        
+        /* Hero section */
+        .hero {
+            padding: 180px 0 100px;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .hero h1 {
+            font-size: 4.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            transform: translateY(30px);
+            text-shadow: 0 5px 15px rgba(255, 235, 59, 0.3);
+        }
+        
+        .hero p {
+            font-size: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto 40px;
+            color: var(--text-light);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        /* Interactive Music Sphere */
+        .music-sphere-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.2;
+        }
+        
+        /* Floating Music Notes */
+        .floating-notes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .music-note {
+            position: absolute;
+            color: rgba(255, 235, 59, 0.6);
+            font-size: 1.5rem;
+            animation: floatNote linear infinite;
+            opacity: 0;
+        }
+        
+        @keyframes floatNote {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Features section */
+        .features {
+            padding: 150px 0;
+            background-color: var(--bg-light);
+        }
+        
+        .features h2 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 80px;
+            color: var(--primary);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+        
+        .feature-card {
+            background-color: rgba(30, 30, 30, 0.7);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.4s ease;
+            border: 1px solid rgba(255, 235, 59, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(50px);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                rgba(255,235,59,0.05) 0%, 
+                rgba(255,87,34,0.05) 100%);
+            z-index: -1;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px) !important;
+            box-shadow: 0 15px 40px rgba(255, 235, 59, 0.2);
+            border-color: rgba(255, 235, 59, 0.3);
+        }
+        .feature-card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .feature-card:hover .feature-card-inner {
+            transform: rotateY(10deg) rotateX(5deg) translateY(-10px);
+        }
+        
+        .feature-card-3d {
+            position: absolute;
+            width: 100%;
+            height: 150px;
+            bottom: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        
+        /* Enhanced Demo Section */
+        /* Enhanced Demo Section */
+        .demo-visualizer {
+            position: relative;
+        }
+        
+        .demo-musicians {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            z-index: 1;
+        }
+
+
+        .feature-icon {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.2);
+            text-shadow: 0 0 20px rgba(255, 235, 59, 0.5);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        
+        .feature-card p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        /* Interactive Demo Section */
+        .interactive-demo {
+            padding: 150px 0;
+            background-color: var(--bg-dark);
+            position: relative;
+        }
+        
+        .interactive-demo h2 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 60px;
+            color: var(--primary);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .demo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        .demo-visualizer {
+            width: 100%;
+            height: 400px;
+            border-radius: 20px;
+            background-color: rgba(30, 30, 30, 0.7);
+            border: 1px solid rgba(255, 235, 59, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #demo-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .demo-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .genre-btn {
+            padding: 10px 20px;
+            border-radius: 30px;
+            background-color: rgba(255, 235, 59, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .genre-btn:hover, .genre-btn.active {
+            background-color: var(--primary);
+            color: var(--secondary);
+            box-shadow: 0 0 15px rgba(255, 235, 59, 0.3);
+        }
+        
+        /* Testimonials */
+        .testimonials {
+            padding: 150px 0;
+            position: relative;
+        }
+        
+        .testimonials h2 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 80px;
+            color: var(--primary);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .testimonial-carousel {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .testimonial {
+            background-color: rgba(30, 30, 30, 0.7);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            font-style: italic;
+            font-size: 1.3rem;
+            line-height: 1.8;
+            border: 1px solid rgba(255, 235, 59, 0.1);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(50px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .testimonial::before {
+            content: '"';
+            position: absolute;
+            font-size: 10rem;
+            color: rgba(255, 235, 59, 0.1);
+            top: -30px;
+            left: 20px;
+            font-family: serif;
+            line-height: 1;
+            z-index: -1;
+        }
+        /* Enhanced Testimonials */
+        .testimonial-avatar-3d {
+            width: 120px;
+            height: 120px;
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .testimonial-audience {
+            position: absolute;
+            bottom: -100px;
+            left: 0;
+            width: 100%;
+            height: 100px;
+        }
+
+        .testimonial-author {
+            margin-top: 30px;
+            font-weight: 600;
+            font-style: normal;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .author-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        .carousel-nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .carousel-dot:hover, .carousel-dot.active {
+            background-color: var(--primary);
+            transform: scale(1.2);
+        }
+        
+        /* Call to action */
+        .cta {
+            padding: 150px 0;
+            text-align: center;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-light) 100%);
+        }
+        
+        .cta h2 {
+            font-size: 3.5rem;
+            margin-bottom: 40px;
+            color: var(--primary);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .cta p {
+            font-size: 1.3rem;
+            max-width: 700px;
+            margin: 0 auto 50px;
+            color: var(--text-light);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .cta .btn {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        /* Particles background */
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        
+        /* Wave animation */
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%231e1e1e' fill-opacity='1' d='M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 100px 0 30px;
+            border-top: 1px solid rgba(255, 235, 59, 0.1);
+            position: relative;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+        
+        .footer-section h3 {
+            color: var(--primary);
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+        }
+        
+        .footer-section p, .footer-section a {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 15px;
+            display: block;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-section a:hover {
+            color: var(--primary);
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background-color: var(--primary);
+            color: var(--secondary);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(255, 235, 59, 0.3);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+        /* Enhanced Footer */
+        .footer-band {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            width: 100%;
+            height: 200px;
+        }
+        
+        .footer-instrument {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .footer-instrument:hover {
+            transform: scale(1.2);
+        }
+        /* Custom cursor */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s, opacity 0.2s, width 0.2s, height 0.2s;
+            mix-blend-mode: difference;
+        }
+        
+        .custom-cursor.active {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 0.7;
+        }
+        
+        .custom-cursor.click {
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 1200px) {
+            .hero h1 {
+                font-size: 4rem;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .hero h1 {
+                font-size: 3.5rem;
+            }
+            
+            .feature-card {
+                padding: 30px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 80%;
+                height: 100vh;
+                background-color: var(--bg-dark);
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 30px;
+                transition: right 0.3s ease;
+                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+                backdrop-filter: blur(10px);
+            }
+            
+            .nav-links.active {
+                right: 0;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            .hero {
+                padding: 150px 0 80px;
+            }
+            
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+            
+            .hero p {
+                font-size: 1.2rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .features h2, 
+            .interactive-demo h2,
+            .testimonials h2,
+            .cta h2 {
+                font-size: 2.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .features h2, 
+            .interactive-demo h2,
+            .testimonials h2,
+            .cta h2 {
+                font-size: 2rem;
+                margin-bottom: 50px;
+            }
+            
+            .feature-card {
+                padding: 25px;
+            }
+            
+            .testimonial {
+                padding: 30px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">MelodyGen</div>
+        <div class="loading-bar-container">
+            <div class="loading-bar" id="loadingBar"></div>
+        </div>
+    </div>
+    
+    <div class="custom-cursor"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    
+    <!-- Background Animation -->
+    <div id="vanta-bg"></div>
+    
+    <!-- Particles Background -->
+    <div id="particles-js"></div>
+    
+    <!-- Floating Music Notes -->
+    <div class="floating-notes" id="floatingNotes"></div>
+    
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo-container">
+            <a href="#" class="logo">
+                <div class="logo-img">MG</div>
+                <div class="logo-text">MelodyGen</div>
+            </a>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}" class="nav-link active">Home</a>
+            <a href="{{ url_for('generate') }}" class="nav-link">Generator</a>
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#demo" class="nav-link">Demo</a>
+            <a href="#testimonials" class="nav-link">Testimonials</a>
+            <a href="#contact" class="nav-link">Contact</a>
+        </div>
+        <div class="mobile-menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <!-- Interactive Music Sphere -->
+        <div class="music-sphere-container" id="musicSphere"></div>
+        
+        <div class="container hero-content">
+            <h1>Create Music with AI</h1>
+            <p>Generate original lyrics and compose matching music in seconds with our powerful AI technology. Perfect for musicians, content creators, and anyone who loves music.</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('generate') }}" class="btn btn-primary">Try Generator</a>
+                <a href="#demo" class="btn btn-secondary">Live Demo</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-card-inner">
+                        <div class="feature-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <h3>Generate Lyrics</h3>
+                        <p>Create unique song lyrics based on emotion, style, and structure. Our AI understands musical patterns and creates professional-quality lyrics.</p>
+                        <div class="feature-card-3d" id="lyrics-3d"></div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-inner">
+                        <div class="feature-icon">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <h3>Compose Music</h3>
+                        <p>Turn your lyrics into complete musical compositions. Choose from different genres and instruments to match your creative vision.</p>
+                        <div class="feature-card-3d" id="compose-3d"></div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-inner">
+                        <div class="feature-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <h3>Export & Share</h3>
+                        <p>Download your creations in high-quality formats or share them directly with your fans and collaborators.</p>
+                        <div class="feature-card-3d" id="export-3d"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wave"></div>
+    </section>
+
+
+    <!-- Interactive Demo Section -->
+    <section class="interactive-demo" id="demo">
+        <div class="container">
+            <h2>Interactive Demo</h2>
+            <div class="demo-container">
+                <div class="demo-visualizer">
+                    <canvas id="demo-canvas"></canvas>
+                    <div class="demo-musicians" id="demo-musicians"></div>
+                </div>
+                <div class="demo-controls">
+                    <div class="genre-btn active" data-genre="pop">Pop</div>
+                    <div class="genre-btn" data-genre="rock">Rock</div>
+                    <div class="genre-btn" data-genre="electronic">Electronic</div>
+                    <div class="genre-btn" data-genre="hiphop">Hip Hop</div>
+                    <div class="genre-btn" data-genre="jazz">Jazz</div>
+                    <div class="genre-btn" data-genre="classical">Classical</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <h2>What Our Users Say</h2>
+            <div class="testimonial-carousel">
+                <div class="testimonial active">
+                    <div class="testimonial-avatar-3d" id="testimonial-avatar-1"></div>
+                    <p>"This tool helped me break through my writer's block. I created an entire album's worth of lyrics in one weekend! The AI music composition is so intuitive it feels like having a collaborator."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SJ</div>
+                        <div>
+                            <div>Sarah Johnson</div>
+                            <div>Independent Artist</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial">
+                    <div class="testimonial-avatar-3d" id="testimonial-avatar-2"></div>
+                    <p>"As a content creator, I needed royalty-free music that matches my brand. MelodyGen gives me perfect tracks in minutes, saving me hours of searching through libraries."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MK</div>
+                        <div>
+                            <div>Michael Kim</div>
+                            <div>YouTuber</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial">
+                    <div class="testimonial-avatar-3d" id="testimonial-avatar-3"></div>
+                    <p>"I'm a music teacher and use MelodyGen to demonstrate songwriting concepts. My students love seeing how small changes affect the generated music and lyrics."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">DR</div>
+                        <div>
+                            <div>David Rodriguez</div>
+                            <div>Music Educator</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-nav">
+                    <div class="carousel-dot active"></div>
+                    <div class="carousel-dot"></div>
+                    <div class="carousel-dot"></div>
+                </div>
+                <div class="testimonial-audience" id="testimonial-audience"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta" id="contact">
+        <div class="container">
+            <h2>Ready to Create Your Masterpiece?</h2>
+            <p>Join thousands of creators who are already using MelodyGen to bring their musical ideas to life.</p>
+            <a href="{{ url_for('generate') }}" class="btn btn-primary">Start Creating Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>MelodyGen</h3>
+                    <p>AI-powered music and lyrics generation for creators of all levels.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <a href="#">Home</a>
+                    <a href="#generator">Generator</a>
+                    <a href="#features">Features</a>
+                    <a href="#demo">Demo</a>
+                    <a href="#testimonials">Testimonials</a>
+                </div>
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <a href="#">Documentation</a>
+                    <a href="#">API</a>
+                    <a href="#">Tutorials</a>
+                    <a href="#">Blog</a>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <a href="mailto:info@melodygen.com">info@melodygen.com</a>
+                    <a href="tel:+1234567890">+1 (234) 567-890</a>
+                    <p>123 Music Lane, Creative City</p>
+                </div>
+            </div>
+            <div class="footer-instruments">
+                <div class="footer-instrument" id="guitar-icon" style="left: 10%; bottom: 20px;">
+                    <i class="fas fa-guitar fa-3x"></i>
+                </div>
+                <div class="footer-instrument" id="drum-icon" style="left: 30%; bottom: 20px;">
+                    <i class="fas fa-drum fa-3x"></i>
+                </div>
+                <div class="footer-instrument" id="piano-icon" style="left: 50%; bottom: 20px;">
+                    <i class="fas fa-piano-keyboard fa-3x"></i>
+                </div>
+                <div class="footer-instrument" id="mic-icon" style="left: 70%; bottom: 20px;">
+                    <i class="fas fa-microphone fa-3x"></i>
+                </div>
+                <div class="footer-instrument" id="headphones-icon" style="left: 90%; bottom: 20px;">
+                    <i class="fas fa-headphones fa-3x"></i>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 MelodyGen. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Loading animation
+        function simulateLoading() {
+            const loadingBar = document.getElementById('loadingBar');
+            const loadingScreen = document.getElementById('loadingScreen');
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                    }, 1000);
+                } else {
+                    width += Math.random() * 10;
+                    if (width > 100) width = 100;
+                    loadingBar.style.width = width + '%';
+                }
+            }, 200);
+        }
+        
+        // Initialize Vanta.js background
+        function initVantaBackground() {
+            if (typeof VANTA !== 'undefined') {
+                VANTA.NET({
+                    el: "#vanta-bg",
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: false,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    color: 0xffeb3b,
+                    backgroundColor: 0x121212,
+                    points: 12.00,
+                    maxDistance: 22.00,
+                    spacing: 18.00
+                });
+            }
+        }
+
+        // Create floating music notes
+        function createFloatingNotes() {
+            const notesContainer = document.getElementById('floatingNotes');
+            const notes = ['♪', '♫', '♩', '♬', '♭', '♮', '♯'];
+            const noteColors = [
+                'rgba(255, 235, 59, 0.8)',
+                'rgba(255, 235, 59, 0.6)',
+                'rgba(255, 235, 59, 0.4)',
+                'rgba(255, 87, 34, 0.8)',
+                'rgba(255, 87, 34, 0.6)',
+                'rgba(255, 87, 34, 0.4)'
+            ];
+            
+            for (let i = 0; i < 30; i++) {
+                const note = document.createElement('div');
+                note.className = 'music-note';
+                note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                note.style.left = Math.random() * 100 + 'vw';
+                note.style.color = noteColors[Math.floor(Math.random() * noteColors.length)];
+                
+                // Random animation properties
+                const duration = 5 + Math.random() * 15;
+                const delay = Math.random() * 10;
+                const size = 1 + Math.random() * 2;
+                
+                note.style.animationDuration = duration + 's';
+                note.style.animationDelay = delay + 's';
+                note.style.fontSize = size + 'rem';
+                
+                notesContainer.appendChild(note);
+            }
+        }
+
+        // Initialize 3D music sphere
+        function initMusicSphere() {
+            const container = document.getElementById('musicSphere');
+            if (!container || typeof THREE === 'undefined') return;
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            container.appendChild(renderer.domElement);
+
+            // Create a sphere with audio-reactive elements
+            const geometry = new THREE.SphereGeometry(5, 32, 32);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0xffeb3b,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.3
+            });
+            const sphere = new THREE.Mesh(geometry, material);
+            scene.add(sphere);
+
+            // Add audio-reactive particles inside the sphere
+            const particleCount = 500;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+            const colors = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                // Random positions within sphere
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                const radius = 3 * Math.random();
+                
+                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = radius * Math.cos(phi);
+                
+                sizes[i] = 0.1 + Math.random() * 0.3;
+                
+                // Yellow to orange colors
+                colors[i * 3] = 1.0; // R
+                colors[i * 3 + 1] = 0.8 + Math.random() * 0.2; // G
+                colors[i * 3 + 2] = 0.2 + Math.random() * 0.3; // B
+            }
+
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 0.2,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true
+            });
+
+            const particleSystem = new THREE.Points(particles, particleMaterial);
+            scene.add(particleSystem);
+
+            camera.position.z = 10;
+
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Rotate sphere
+                sphere.rotation.x += 0.005;
+                sphere.rotation.y += 0.005;
+                
+                // Animate particles to simulate audio response
+                const positions = particles.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    // Simulate pulsing to music
+                    const pulse = Math.sin(Date.now() * 0.001 + i * 0.1) * 0.1;
+                    positions[i * 3] += pulse;
+                    positions[i * 3 + 1] += pulse;
+                    positions[i * 3 + 2] += pulse;
+                }
+                particles.attributes.position.needsUpdate = true;
+                
+                renderer.render(scene, camera);
+            }
+
+            animate();
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.offsetWidth / container.offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+            });
+        }
+
+        // Initialize interactive demo canvas
+        function initDemoCanvas() {
+            const canvas = document.getElementById('demo-canvas');
+            if (!canvas || typeof THREE === 'undefined') return;
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            
+            // Create audio bars
+            const barCount = 64;
+            const bars = [];
+            const colors = [
+                new THREE.Color(0xffeb3b),
+                new THREE.Color(0xffc107),
+                new THREE.Color(0xff9800),
+                new THREE.Color(0xff5722)
+            ];
+            
+            for (let i = 0; i < barCount; i++) {
+                const geometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+                const colorIndex = Math.floor(i / (barCount / colors.length));
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: colors[colorIndex],
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                const bar = new THREE.Mesh(geometry, material);
+                
+                // Arrange in a circle
+                const radius = 5;
+                const angle = (i / barCount) * Math.PI * 2;
+                
+                bar.position.x = Math.cos(angle) * radius;
+                bar.position.z = Math.sin(angle) * radius;
+                
+                // Rotate to face center
+                bar.lookAt(new THREE.Vector3(0, 0, 0));
+                
+                scene.add(bar);
+                bars.push({
+                    mesh: bar,
+                    baseHeight: 1 + Math.random() * 2,
+                    speed: 0.5 + Math.random() * 0.5
+                });
+            }
+            
+            // Add center sphere
+            const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+            const sphereMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffeb3b,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.5
+            });
+            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            scene.add(sphere);
+            
+            camera.position.y = 5;
+            camera.position.z = 10;
+            camera.lookAt(0, 0, 0);
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Animate bars to simulate audio response
+                bars.forEach((bar, i) => {
+                    const scale = bar.baseHeight + Math.sin(Date.now() * 0.001 * bar.speed + i) * bar.baseHeight;
+                    bar.mesh.scale.y = scale;
+                });
+                
+                // Rotate sphere
+                sphere.rotation.x += 0.005;
+                sphere.rotation.y += 0.005;
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle genre button clicks
+            const genreButtons = document.querySelectorAll('.genre-btn');
+            genreButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    genreButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Change animation based on genre
+                    const genre = this.dataset.genre;
+                    // In a real app, this would change the actual music
+                    // For demo, we'll just change the animation style
+                    bars.forEach(bar => {
+                        switch(genre) {
+                            case 'rock':
+                                bar.speed = 0.8 + Math.random() * 0.4;
+                                break;
+                            case 'electronic':
+                                bar.speed = 1.2 + Math.random() * 0.6;
+                                break;
+                            case 'hiphop':
+                                bar.speed = 0.6 + Math.random() * 0.3;
+                                break;
+                            case 'jazz':
+                                bar.speed = 0.4 + Math.random() * 0.2;
+                                break;
+                            case 'classical':
+                                bar.speed = 0.3 + Math.random() * 0.15;
+                                break;
+                            default: // pop
+                                bar.speed = 0.5 + Math.random() * 0.5;
+                        }
+                    });
+                });
+            });
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            });
+        }
+
+        // Initialize particles.js background
+        function initParticles() {
+            if (typeof particlesJS !== 'undefined') {
+                particlesJS('particles-js', {
+                    "particles": {
+                        "number": {
+                            "value": 80,
+                            "density": {
+                                "enable": true,
+                                "value_area": 800
+                            }
+                        },
+                        "color": {
+                            "value": "#ffeb3b"
+                        },
+                        "shape": {
+                            "type": "circle",
+                            "stroke": {
+                                "width": 0,
+                                "color": "#000000"
+                            },
+                            "polygon": {
+                                "nb_sides": 5
+                            }
+                        },
+                        "opacity": {
+                            "value": 0.5,
+                            "random": true,
+                            "anim": {
+                                "enable": true,
+                                "speed": 1,
+                                "opacity_min": 0.1,
+                                "sync": false
+                            }
+                        },
+                        "size": {
+                            "value": 3,
+                            "random": true,
+                            "anim": {
+                                "enable": true,
+                                "speed": 2,
+                                "size_min": 0.1,
+                                "sync": false
+                            }
+                        },
+                        "line_linked": {
+                            "enable": true,
+                            "distance": 150,
+                            "color": "#ffeb3b",
+                            "opacity": 0.2,
+                            "width": 1
+                        },
+                        "move": {
+                            "enable": true,
+                            "speed": 1,
+                            "direction": "none",
+                            "random": true,
+                            "straight": false,
+                            "out_mode": "out",
+                            "bounce": false,
+                            "attract": {
+                                "enable": true,
+                                "rotateX": 600,
+                                "rotateY": 1200
+                            }
+                        }
+                    },
+                    "interactivity": {
+                        "detect_on": "canvas",
+                        "events": {
+                            "onhover": {
+                                "enable": true,
+                                "mode": "grab"
+                            },
+                            "onclick": {
+                                "enable": true,
+                                "mode": "push"
+                            },
+                            "resize": true
+                        },
+                        "modes": {
+                            "grab": {
+                                "distance": 140,
+                                "line_linked": {
+                                    "opacity": 0.5
+                                }
+                            },
+                            "push": {
+                                "particles_nb": 4
+                            }
+                        }
+                    },
+                    "retina_detect": true
+                });
+            }
+        }
+
+        // Smooth scrolling for anchor links
+        function setupSmoothScrolling() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        window.scrollTo({
+                            top: target.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        }
+
+        // Mobile menu toggle
+        function setupMobileMenu() {
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            const navLinks = document.querySelector('.nav-links');
+            
+            toggle.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+                this.classList.toggle('active');
+            });
+            
+            // Close menu when clicking on a link
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', () => {
+                    navLinks.classList.remove('active');
+                    toggle.classList.remove('active');
+                });
+            });
+        }
+
+        // Custom cursor
+        function setupCustomCursor() {
+            const cursor = document.querySelector('.custom-cursor');
+            if (!cursor) return;
+            
+            document.addEventListener('mousemove', (e) => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            });
+            
+            document.addEventListener('mousedown', () => {
+                cursor.classList.add('click');
+                setTimeout(() => {
+                    cursor.classList.remove('click');
+                }, 200);
+            });
+            
+            // Change cursor on hover
+            document.querySelectorAll('a, button, .genre-btn, .carousel-dot').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    cursor.classList.add('active');
+                });
+                el.addEventListener('mouseleave', () => {
+                    cursor.classList.remove('active');
+                });
+            });
+            
+            // Hide cursor when it leaves the window
+            document.addEventListener('mouseleave', () => {
+                cursor.style.opacity = '0';
+            });
+            
+            document.addEventListener('mouseenter', () => {
+                cursor.style.opacity = '0.5';
+            });
+        }
+
+        // Navbar scroll effect
+        function setupNavbarScroll() {
+            const navbar = document.querySelector('.navbar');
+            
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+        }
+
+        // Testimonial carousel
+        function setupTestimonialCarousel() {
+            const testimonials = document.querySelectorAll('.testimonial');
+            const dots = document.querySelectorAll('.carousel-dot');
+            let currentIndex = 0;
+            
+            function showTestimonial(index) {
+                testimonials.forEach((testimonial, i) => {
+                    testimonial.classList.toggle('active', i === index);
+                });
+                
+                dots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === index);
+                });
+                
+                currentIndex = index;
+            }
+            
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    showTestimonial(index);
+                });
+            });
+            
+            // Auto-rotate testimonials
+            setInterval(() => {
+                const nextIndex = (currentIndex + 1) % testimonials.length;
+                showTestimonial(nextIndex);
+            }, 5000);
+        }
+
+        // Initialize GSAP animations
+        function initGSAPAnimations() {
+            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+            
+            gsap.registerPlugin(ScrollTrigger);
+            
+            // Hero section animations
+            gsap.to('.hero h1', {
+                opacity: 1, 
+                y: 0, 
+                duration: 1, 
+                ease: 'power3.out',
+                delay: 0.3
+            });
+            
+            gsap.to('.hero p', {
+                opacity: 1, 
+                y: 0, 
+                duration: 1, 
+                delay: 0.6, 
+                ease: 'power3.out'
+            });
+            
+            gsap.to('.cta-buttons', {
+                opacity: 1, 
+                y: 0, 
+                duration: 1, 
+                delay: 0.9, 
+                ease: 'power3.out'
+            });
+            
+            // Features section
+            gsap.to('.features h2', {
+                scrollTrigger: {
+                    trigger: '.features',
+                    start: 'top 80%',
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: 'power3.out'
+            });
+            
+            gsap.to('.feature-card', {
+                scrollTrigger: {
+                    trigger: '.features-grid',
+                    start: 'top 70%',
+                },
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                stagger: 0.2,
+                ease: 'power3.out'
+            });
+            
+            // Interactive demo
+            gsap.to('.interactive-demo h2', {
+                scrollTrigger: {
+                    trigger: '.interactive-demo',
+                    start: 'top 80%',
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: 'power3.out'
+            });
+            
+            // Testimonials
+            gsap.to('.testimonials h2', {
+                scrollTrigger: {
+                    trigger: '.testimonials',
+                    start: 'top 80%',
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: 'power3.out'
+            });
+            
+            gsap.to('.testimonial', {
+                scrollTrigger: {
+                    trigger: '.testimonial-carousel',
+                    start: 'top 80%',
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: 'power3.out'
+            });
+            
+            // CTA
+            gsap.to('.cta h2', {
+                scrollTrigger: {
+                    trigger: '.cta',
+                    start: 'top 80%',
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: 'power3.out'
+            });
+            
+            gsap.to('.cta p', {
+                scrollTrigger: {
+                    trigger: '.cta',
+                    start: 'top 80%',
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                delay: 0.3,
+                ease: 'power3.out'
+            });
+            
+            gsap.to('.cta .btn', {
+                scrollTrigger: {
+                    trigger: '.cta',
+                    start: 'top 80%',
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                delay: 0.6,
+                ease: 'power3.out'
+            });
+            
+            // Logo animation on scroll
+            gsap.to('.logo-img', {
+                scrollTrigger: {
+                    trigger: '.hero',
+                    start: 'top top',
+                    end: 'bottom top',
+                    scrub: true,
+                },
+                rotation: 360,
+                ease: 'none'
+            });
+        }
+
+        function initFeature3DElements() {
+            // Lyrics generator character
+            init3DNoteCharacter('lyrics-3d', 0xffeb3b, 'writing');
+            
+            // Music composer character
+            init3DNoteCharacter('compose-3d', 0xff9800, 'playing');
+            
+            // Export character
+            init3DNoteCharacter('export-3d', 0xff5722, 'uploading');
+        }
+        
+        function init3DNoteCharacter(containerId, color, action) {
+            const container = document.getElementById(containerId);
+            if (!container || typeof THREE === 'undefined') return;
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create a musical note character
+            const group = new THREE.Group();
+            
+            // Note head
+            const headGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const headMaterial = new THREE.MeshPhongMaterial({ 
+                color: color,
+                shininess: 100
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.5;
+            group.add(head);
+            
+            // Note stem
+            const stemGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1.5, 8);
+            const stemMaterial = new THREE.MeshPhongMaterial({ color: color });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.y = 0.5;
+            stem.rotation.z = Math.PI / 10;
+            group.add(stem);
+            
+            // Eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.2, 1.6, 0.4);
+            group.add(leftEye);
+            
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.position.set(0.2, 1.6, 0.4);
+            group.add(rightEye);
+            
+            // Mouth (smile)
+            const mouthGeometry = new THREE.TorusGeometry(0.2, 0.05, 16, 32, Math.PI);
+            const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0, 1.4, 0.4);
+            mouth.rotation.x = Math.PI / 2;
+            group.add(mouth);
+            
+            // Arms (for different actions)
+            if (action === 'writing') {
+                // Pencil in hand
+                const armGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8);
+                const armMaterial = new THREE.MeshPhongMaterial({ color: color });
+                
+                const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+                leftArm.position.set(-0.5, 1.2, 0);
+                leftArm.rotation.z = Math.PI / 3;
+                group.add(leftArm);
+                
+                const pencilGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6);
+                const pencilMaterial = new THREE.MeshPhongMaterial({ color: 0x795548 });
+                const pencilTipMaterial = new THREE.MeshPhongMaterial({ color: 0xff5722 });
+                
+                const pencil = new THREE.Mesh(pencilGeometry, pencilMaterial);
+                pencil.position.set(-0.8, 1.0, 0);
+                pencil.rotation.z = Math.PI / 3;
+                
+                const pencilTip = new THREE.ConeGeometry(0.03, 0.1, 6);
+                const pencilTipMesh = new THREE.Mesh(pencilTip, pencilTipMaterial);
+                pencilTipMesh.position.set(-0.8, 0.75, 0);
+                pencilTipMesh.rotation.z = Math.PI / 3;
+                
+                group.add(pencil);
+                group.add(pencilTipMesh);
+            } 
+            else if (action === 'playing') {
+                // Musical notes floating around
+                for (let i = 0; i < 5; i++) {
+                    const noteGeometry = new THREE.BufferGeometry();
+                    const vertices = new Float32Array([
+                        0, 0.3, 0,
+                        0.2, 0.5, 0,
+                        0.4, 0.3, 0,
+                        0.2, 0.1, 0
+                    ]);
+                    noteGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                    
+                    const noteMaterial = new THREE.MeshBasicMaterial({ 
+                        color: color,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    const note = new THREE.Mesh(noteGeometry, noteMaterial);
+                    note.position.set(
+                        Math.random() * 2 - 1,
+                        1.5 + Math.random(),
+                        Math.random() * 0.5
+                    );
+                    note.scale.set(0.3, 0.3, 0.3);
+                    group.add(note);
+                }
+            }
+            else if (action === 'uploading') {
+                // Upload arrow animation
+                const arrowGeometry = new THREE.ConeGeometry(0.1, 0.3, 4);
+                const arrowMaterial = new THREE.MeshPhongMaterial({ color: color });
+                
+                const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                arrow.position.set(0, 2.0, 0);
+                arrow.rotation.x = Math.PI;
+                group.add(arrow);
+                
+                // Cloud
+                const cloudGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+                const cloudMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                const cloud1 = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                cloud1.position.set(0, 1.5, 0);
+                group.add(cloud1);
+                
+                const cloud2 = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                cloud2.position.set(0.2, 1.5, 0);
+                cloud2.scale.set(0.8, 0.8, 0.8);
+                group.add(cloud2);
+                
+                const cloud3 = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                cloud3.position.set(-0.2, 1.5, 0);
+                cloud3.scale.set(0.6, 0.6, 0.6);
+                group.add(cloud3);
+            }
+            
+            scene.add(group);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            camera.position.z = 5;
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                group.rotation.y += 0.01;
+                
+                // Bounce animation
+                group.position.y = Math.sin(Date.now() * 0.002) * 0.2;
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.offsetWidth / container.offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+            });
+        }
+        
+        // Initialize 3D musicians for demo section
+        function initDemoMusicians() {
+            const container = document.getElementById('demo-musicians');
+            if (!container || typeof THREE === 'undefined') return;
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create a stage with musicians
+            const stage = new THREE.Group();
+            
+            // Stage floor
+            const stageGeometry = new THREE.PlaneGeometry(10, 4);
+            const stageMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x333333,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const stageFloor = new THREE.Mesh(stageGeometry, stageMaterial);
+            stageFloor.rotation.x = -Math.PI / 2;
+            stageFloor.position.y = -0.5;
+            stage.add(stageFloor);
+            
+            // Create musicians for each genre
+            const musicians = {
+                pop: createMusician(0xffeb3b, 'female', 'microphone'),
+                rock: createMusician(0xff5722, 'male', 'guitar'),
+                electronic: createMusician(0x9c27b0, 'robot', 'keyboard'),
+                hiphop: createMusician(0x4caf50, 'male', 'turntable'),
+                jazz: createMusician(0x2196f3, 'female', 'saxophone'),
+                classical: createMusician(0x607d8b, 'male', 'violin')
+            };
+            
+            // Position musicians
+            let xPos = -4;
+            for (const [genre, musician] of Object.entries(musicians)) {
+                musician.position.set(xPos, 0, 0);
+                musician.visible = (genre === 'pop'); // Only show pop initially
+                stage.add(musician);
+                xPos += 1.6;
+            }
+            
+            scene.add(stage);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const spotLight = new THREE.SpotLight(0xffffff, 1);
+            spotLight.position.set(0, 5, 5);
+            spotLight.castShadow = true;
+            scene.add(spotLight);
+            
+            camera.position.set(0, 2, 5);
+            camera.lookAt(0, 0, 0);
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Animate musicians based on their instruments
+                stage.children.forEach(child => {
+                    if (child.userData.instrument === 'guitar') {
+                        child.rotation.z = Math.sin(Date.now() * 0.002) * 0.2;
+                    }
+                    if (child.userData.instrument === 'microphone') {
+                        child.position.y = Math.sin(Date.now() * 0.003) * 0.1;
+                    }
+                    if (child.userData.instrument === 'keyboard') {
+                        child.rotation.x = Math.sin(Date.now() * 0.001) * 0.1;
+                    }
+                });
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle genre changes
+            document.querySelectorAll('.genre-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const genre = this.dataset.genre;
+                    
+                    // Hide all musicians
+                    stage.children.forEach(child => {
+                        if (child.userData.type === 'musician') {
+                            child.visible = false;
+                        }
+                    });
+                    
+                    // Show the selected genre's musician
+                    musicians[genre].visible = true;
+                    
+                    // Change lighting color based on genre
+                    spotLight.color.setHex(getGenreColor(genre));
+                });
+            });
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.offsetWidth / container.offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+            });
+        }
+        
+        function createMusician(color, type, instrument) {
+            const group = new THREE.Group();
+            group.userData = { type: 'musician', instrument };
+            
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 8);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ color });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.5;
+            group.add(body);
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const headMaterial = new THREE.MeshPhongMaterial({ color });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.4;
+            group.add(head);
+            
+            // Eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.15, 1.45, 0.35);
+            group.add(leftEye);
+            
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.position.set(0.15, 1.45, 0.35);
+            group.add(rightEye);
+            
+            // Mouth
+            const mouthGeometry = new THREE.TorusGeometry(0.1, 0.03, 8, 16, Math.PI);
+            const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0, 1.35, 0.35);
+            mouth.rotation.x = Math.PI / 2;
+            group.add(mouth);
+            
+            // Create instrument
+            createInstrument(group, instrument);
+            
+            return group;
+        }
+        
+        function createInstrument(group, instrument) {
+            switch(instrument) {
+                case 'guitar':
+                    const guitarBody = new THREE.BoxGeometry(1, 0.2, 0.3);
+                    const guitarNeck = new THREE.BoxGeometry(0.1, 0.1, 1.5);
+                    const guitarMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0x8d6e63,
+                        roughness: 0.7
+                    });
+                    
+                    const body = new THREE.Mesh(guitarBody, guitarMaterial);
+                    body.position.set(0.7, 0.7, 0);
+                    body.rotation.z = -Math.PI / 6;
+                    group.add(body);
+                    
+                    const neck = new THREE.Mesh(guitarNeck, guitarMaterial);
+                    neck.position.set(0.7, 0.7, 0.8);
+                    neck.rotation.z = -Math.PI / 6;
+                    group.add(neck);
+                    break;
+                    
+                case 'microphone':
+                    const micStand = new THREE.CylinderGeometry(0.03, 0.03, 1, 8);
+                    const micHead = new THREE.SphereGeometry(0.1, 16, 16);
+                    const micMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0x333333,
+                        metalness: 0.8,
+                        roughness: 0.2
+                    });
+                    
+                    const stand = new THREE.Mesh(micStand, micMaterial);
+                    stand.position.set(0.5, 0.5, 0);
+                    group.add(stand);
+                    
+                    const head = new THREE.Mesh(micHead, micMaterial);
+                    head.position.set(0.5, 1.1, 0);
+                    group.add(head);
+                    break;
+                    
+                case 'keyboard':
+                    const keyboardBase = new THREE.BoxGeometry(1.5, 0.1, 0.5);
+                    const keyboardKeys = new THREE.BoxGeometry(1.4, 0.05, 0.4);
+                    const baseMaterial = new THREE.MeshPhongMaterial({ color: 0x212121 });
+                    const keysMaterial = new THREE.MeshPhongMaterial({ color: 0xf5f5f5 });
+                    
+                    const base = new THREE.Mesh(keyboardBase, baseMaterial);
+                    base.position.set(0, 0.6, 0);
+                    group.add(base);
+                    
+                    const keys = new THREE.Mesh(keyboardKeys, keysMaterial);
+                    keys.position.set(0, 0.675, 0);
+                    group.add(keys);
+                    break;
+                    
+                case 'turntable':
+                    const turntableBase = new THREE.CylinderGeometry(0.6, 0.6, 0.1, 32);
+                    const turntableDisk = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 32);
+                    const baseMat = new THREE.MeshPhongMaterial({ color: 0x212121 });
+                    const diskMat = new THREE.MeshPhongMaterial({ 
+                        color: 0x333333,
+                        metalness: 0.5,
+                        roughness: 0.3
+                    });
+                    
+                    const tBase = new THREE.Mesh(turntableBase, baseMat);
+                    tBase.position.set(0, 0.6, 0);
+                    group.add(tBase);
+                    
+                    const disk = new THREE.Mesh(turntableDisk, diskMat);
+                    disk.position.set(0, 0.66, 0);
+                    disk.rotation.x = Math.PI / 2;
+                    group.add(disk);
+                    break;
+                    
+                case 'saxophone':
+                    const saxTube = new THREE.TubeGeometry(
+                        new THREE.CatmullRomCurve3([
+                            new THREE.Vector3(0, 0.8, 0),
+                            new THREE.Vector3(0.2, 0.9, 0),
+                            new THREE.Vector3(0.5, 0.7, 0),
+                            new THREE.Vector3(0.7, 0.9, 0)
+                        ]),
+                        64,
+                        0.05,
+                        8,
+                        false
+                    );
+                    const saxMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0xff9800,
+                        metalness: 0.8,
+                        roughness: 0.3
+                    });
+                    
+                    const sax = new THREE.Mesh(saxTube, saxMaterial);
+                    group.add(sax);
+                    break;
+                    
+                case 'violin':
+                    const violinBody = new THREE.BoxGeometry(0.6, 0.2, 0.1);
+                    const violinNeck = new THREE.BoxGeometry(0.05, 0.05, 0.8);
+                    const violinMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0x8d6e63,
+                        roughness: 0.5
+                    });
+                    
+                    const vBody = new THREE.Mesh(violinBody, violinMaterial);
+                    vBody.position.set(0.3, 0.7, 0);
+                    group.add(vBody);
+                    
+                    const vNeck = new THREE.Mesh(violinNeck, violinMaterial);
+                    vNeck.position.set(0.3, 0.7, 0.5);
+                    group.add(vNeck);
+                    break;
+            }
+        }
+        
+        function getGenreColor(genre) {
+            switch(genre) {
+                case 'pop': return 0xffeb3b;
+                case 'rock': return 0xff5722;
+                case 'electronic': return 0x9c27b0;
+                case 'hiphop': return 0x4caf50;
+                case 'jazz': return 0x2196f3;
+                case 'classical': return 0x607d8b;
+                default: return 0xffffff;
+            }
+        }
+        
+        // Initialize 3D testimonial avatars
+        function initTestimonialAvatars() {
+            initTestimonialAvatar('testimonial-avatar-1', 0xffeb3b, 'female');
+            initTestimonialAvatar('testimonial-avatar-2', 0xff5722, 'male');
+            initTestimonialAvatar('testimonial-avatar-3', 0x2196f3, 'male');
+            
+            // Initialize audience
+            initTestimonialAudience();
+        }
+        
+        function initTestimonialAvatar(containerId, color, gender) {
+            const container = document.getElementById(containerId);
+            if (!container || typeof THREE === 'undefined') return;
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create avatar
+            const avatar = new THREE.Group();
+            
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 8);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ color });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.5;
+            avatar.add(body);
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const headMaterial = new THREE.MeshPhongMaterial({ color });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.4;
+            avatar.add(head);
+            
+            // Eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.15, 1.45, 0.35);
+            avatar.add(leftEye);
+            
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.position.set(0.15, 1.45, 0.35);
+            avatar.add(rightEye);
+            
+            // Mouth (smile)
+            const mouthGeometry = new THREE.TorusGeometry(0.1, 0.03, 8, 16, Math.PI);
+            const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0, 1.35, 0.35);
+            mouth.rotation.x = Math.PI / 2;
+            avatar.add(mouth);
+            
+            // Hair (gender specific)
+            if (gender === 'female') {
+                const hairGeometry = new THREE.ConeGeometry(0.45, 0.3, 32);
+                const hairMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x5d4037,
+                    flatShading: true
+                });
+                
+                const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+                hair.position.set(0, 1.7, 0);
+                hair.rotation.x = Math.PI;
+                avatar.add(hair);
+            } else {
+                const hairGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.6);
+                const hairMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x5d4037,
+                    flatShading: true
+                });
+                
+                const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+                hair.position.set(0, 1.65, 0);
+                avatar.add(hair);
+            }
+            
+            scene.add(avatar);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            camera.position.z = 3;
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Slight head bob
+                avatar.rotation.y = Math.sin(Date.now() * 0.001) * 0.1;
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.offsetWidth / container.offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+            });
+        }
+        
+        function initTestimonialAudience() {
+            const container = document.getElementById('testimonial-audience');
+            if (!container || typeof THREE === 'undefined') return;
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create audience of simple figures
+            const audience = new THREE.Group();
+            const colors = [0xffeb3b, 0xff5722, 0x2196f3, 0x4caf50, 0x9c27b0];
+            
+            for (let i = 0; i < 20; i++) {
+                const figure = new THREE.Group();
+                
+                // Body
+                const bodyGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.4, 6);
+                const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                    color: colors[i % colors.length],
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.2;
+                figure.add(body);
+                
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                const headMaterial = new THREE.MeshPhongMaterial({ 
+                    color: colors[i % colors.length]
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 0.5;
+                figure.add(head);
+                
+                // Position in rows
+                const row = Math.floor(i / 5);
+                const col = i % 5;
+                
+                figure.position.set(
+                    (col - 2) * 0.5,
+                    0,
+                    -row * 0.4
+                );
+                
+                figure.scale.set(0.6, 0.6, 0.6);
+                
+                audience.add(figure);
+            }
+            
+            scene.add(audience);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            camera.position.set(0, 1, 2);
+            camera.lookAt(0, 0, -1);
+            
+            // Animation - slight movement
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                audience.children.forEach((figure, i) => {
+                    // Slight bobbing
+                    figure.position.y = 0.2 + Math.sin(Date.now() * 0.001 + i) * 0.05;
+                    
+                    // Occasional head turns
+                    if (Math.random() < 0.01) {
+                        gsap.to(figure.rotation, {
+                            y: (Math.random() - 0.5) * 0.5,
+                            duration: 1,
+                            ease: "elastic.out(1, 0.3)"
+                        });
+                    }
+                });
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.offsetWidth / container.offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+            });
+        }
+        
+        // Initialize 3D band for footer
+        function initFooterBand() {
+            const container = document.getElementById('footer-band');
+            if (!container || typeof THREE === 'undefined') return;
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create a band with simple figures
+            const band = new THREE.Group();
+            const colors = [0xffeb3b, 0xff5722, 0x2196f3, 0x4caf50, 0x9c27b0];
+            
+            // Create band members with different instruments
+            for (let i = 0; i < 5; i++) {
+                const musician = new THREE.Group();
+                
+                // Body
+                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.6, 8);
+                const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                    color: colors[i],
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.3;
+                musician.add(body);
+                
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+                const headMaterial = new THREE.MeshPhongMaterial({ 
+                    color: colors[i]
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 0.8;
+                musician.add(head);
+                
+                // Position in a row
+                musician.position.set((i - 2) * 0.8, 0, 0);
+                
+                // Add instrument
+                let instrument;
+                switch(i) {
+                    case 0: // Singer
+                        const micGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8);
+                        const micHeadGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+                        const micMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0x333333,
+                            metalness: 0.8
+                        });
+                        
+                        const mic = new THREE.Mesh(micGeometry, micMaterial);
+                        mic.position.set(0.2, 0.9, 0);
+                        mic.rotation.z = -Math.PI / 6;
+                        musician.add(mic);
+                        
+                        const micHead = new THREE.Mesh(micHeadGeometry, micMaterial);
+                        micHead.position.set(0.35, 0.95, 0);
+                        musician.add(micHead);
+                        break;
+                        
+                    case 1: // Guitarist
+                        const guitarBody = new THREE.BoxGeometry(0.5, 0.1, 0.15);
+                        const guitarNeck = new THREE.BoxGeometry(0.05, 0.05, 0.8);
+                        const guitarMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0x795548,
+                            roughness: 0.7
+                        });
+                        
+                        const gBody = new THREE.Mesh(guitarBody, guitarMaterial);
+                        gBody.position.set(0.3, 0.6, 0);
+                        gBody.rotation.z = -Math.PI / 6;
+                        musician.add(gBody);
+                        
+                        const gNeck = new THREE.Mesh(guitarNeck, guitarMaterial);
+                        gNeck.position.set(0.3, 0.6, 0.4);
+                        gNeck.rotation.z = -Math.PI / 6;
+                        musician.add(gNeck);
+                        break;
+                        
+                    case 2: // Drummer
+                        const drumBase = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
+                        const drumTop = new THREE.CylinderGeometry(0.25, 0.25, 0.02, 16);
+                        const drumMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0x795548
+                        });
+                        const drumTopMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0xffffff,
+                            roughness: 0.9
+                        });
+                        
+                        const dBottom = new THREE.Mesh(drumBase, drumMaterial);
+                        dBottom.position.set(0, 0.4, 0);
+                        musician.add(dBottom);
+                        
+                        const dTop = new THREE.Mesh(drumTop, drumTopMaterial);
+                        dTop.position.set(0, 0.46, 0);
+                        musician.add(dTop);
+                        
+                        // Drum sticks
+                        const stickGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 8);
+                        const stickMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0x8d6e63
+                        });
+                        
+                        const stick1 = new THREE.Mesh(stickGeometry, stickMaterial);
+                        stick1.position.set(0.1, 0.8, 0);
+                        stick1.rotation.z = Math.PI / 4;
+                        musician.add(stick1);
+                        
+                        const stick2 = new THREE.Mesh(stickGeometry, stickMaterial);
+                        stick2.position.set(-0.1, 0.8, 0);
+                        stick2.rotation.z = -Math.PI / 4;
+                        musician.add(stick2);
+                        break;
+                        
+                    case 3: // Keyboardist
+                        const keyboardBase = new THREE.BoxGeometry(0.7, 0.05, 0.2);
+                        const keyboardKeys = new THREE.BoxGeometry(0.65, 0.02, 0.18);
+                        const kBaseMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0x212121
+                        });
+                        const kKeysMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0xf5f5f5
+                        });
+                        
+                        const kBase = new THREE.Mesh(keyboardBase, kBaseMaterial);
+                        kBase.position.set(0, 0.5, 0);
+                        musician.add(kBase);
+                        
+                        const kKeys = new THREE.Mesh(keyboardKeys, kKeysMaterial);
+                        kKeys.position.set(0, 0.535, 0);
+                        musician.add(kKeys);
+                        break;
+                        
+                    case 4: // Bassist
+                        const bassBody = new THREE.BoxGeometry(0.5, 0.1, 0.15);
+                        const bassNeck = new THREE.BoxGeometry(0.05, 0.05, 0.9);
+                        const bassMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0x333333,
+                            metalness: 0.5
+                        });
+                        
+                        const bBody = new THREE.Mesh(bassBody, bassMaterial);
+                        bBody.position.set(0.3, 0.6, 0);
+                        bBody.rotation.z = -Math.PI / 6;
+                        musician.add(bBody);
+                        
+                        const bNeck = new THREE.Mesh(bassNeck, bassMaterial);
+                        bNeck.position.set(0.3, 0.6, 0.45);
+                        bNeck.rotation.z = -Math.PI / 6;
+                        musician.add(bNeck);
+                        break;
+                }
+                
+                band.add(musician);
+            }
+            
+            scene.add(band);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // Stage lights
+            const spotLight1 = new THREE.SpotLight(0xffeb3b, 0.5);
+            spotLight1.position.set(-3, 3, 3);
+            scene.add(spotLight1);
+            
+            const spotLight2 = new THREE.SpotLight(0xff5722, 0.5);
+            spotLight2.position.set(3, 3, 3);
+            scene.add(spotLight2);
+            
+            camera.position.set(0, 1, 3);
+            camera.lookAt(0, 0, 0);
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Animate band members
+                band.children.forEach((musician, i) => {
+                    // Slight bouncing to the "music"
+                    musician.position.y = Math.sin(Date.now() * 0.001 + i) * 0.05;
+                    
+                    // Instrument specific animations
+                    if (i === 0) { // Singer head movement
+                        musician.children[1].rotation.y = Math.sin(Date.now() * 0.001) * 0.2;
+                    }
+                    if (i === 1) { // Guitarist strumming
+                        musician.rotation.z = Math.sin(Date.now() * 0.002) * 0.1;
+                    }
+                    if (i === 2) { // Drummer drumming
+                        musician.children[3].rotation.x = Math.sin(Date.now() * 0.005) * 0.5;
+                        musician.children[4].rotation.x = Math.sin(Date.now() * 0.005 + 1) * 0.5;
+                    }
+                });
+                
+                // Rotate stage lights
+                spotLight1.position.x = Math.sin(Date.now() * 0.001) * 3;
+                spotLight2.position.x = Math.cos(Date.now() * 0.001) * 3;
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.offsetWidth / container.offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+            });
+        }
+        
+        // Initialize instrument interactions in footer
+        function initFooterInstruments() {
+            const instruments = {
+                'guitar-icon': { sound: 'guitar', color: 0xff5722 },
+                'drum-icon': { sound: 'drum', color: 0xff9800 },
+                'piano-icon': { sound: 'piano', color: 0xffeb3b },
+                'mic-icon': { sound: 'vocals', color: 0x2196f3 },
+                'headphones-icon': { sound: 'music', color: 0x4caf50 }
+            };
+            
+            for (const [id, data] of Object.entries(instruments)) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('mouseenter', () => {
+                        // In a real app, this would play the corresponding sound
+                        // For demo, we'll just animate the icon
+                        gsap.to(element, {
+                            y: -10,
+                            duration: 0.3,
+                            ease: "back.out(1.7)"
+                        });
+                        
+                        // Change color
+                        element.style.color = `#${data.color.toString(16)}`;
+                    });
+                    
+                    element.addEventListener('mouseleave', () => {
+                        gsap.to(element, {
+                            y: 0,
+                            duration: 0.5,
+                            ease: "elastic.out(1, 0.3)"
+                        });
+                        
+                        // Reset color
+                        element.style.color = 'white';
+                    });
+                }
+            }
+        }
+        
+        // Update the initialization function
+        document.addEventListener('DOMContentLoaded', function() {
+            simulateLoading();
+            
+            // Initialize features with slight delay for better performance
+            setTimeout(() => {
+                initVantaBackground();
+                createFloatingNotes();
+                initMusicSphere();
+                initDemoCanvas();
+                initParticles();
+                setupSmoothScrolling();
+                setupMobileMenu();
+                setupCustomCursor();
+                setupNavbarScroll();
+                setupTestimonialCarousel();
+                initGSAPAnimations();
+                
+                // Initialize new 3D elements
+                initFeature3DElements();
+                initDemoMusicians();
+                initTestimonialAvatars();
+                initFooterBand();
+                initFooterInstruments();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

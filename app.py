@@ -1285,14 +1285,22 @@ Original lyrics:
     return lyrics  # Fallback to original lyrics
     
 @app.route('/')
-def index():
-    """Render the main page with options for both music and lyrics generation"""
-    # Get available emotions if model is initialized
+def home():
+    """Homepage with featured content"""
+    return render_template('home.html', active_page='home')
+
+@app.route('/generate')
+def generate():
+    """Main generator page"""
     emotions = []
     if lyrics_model_initialized and lyrics_preprocessor:
         emotions = list(lyrics_preprocessor.emotion_to_idx.keys())
     
-    return render_template('index.html', emotions=emotions, lyrics_model_initialized=lyrics_model_initialized)
+    return render_template('index.html', 
+                         emotions=emotions, 
+                         lyrics_model_initialized=lyrics_model_initialized,
+                         active_page='generate')
+
 
 # ===== MUSIC GENERATION ROUTES =====
 

@@ -9,8 +9,8 @@
 /so-vits-svc
 /so-vits-svc
 
-/old_app.py
 /static/songs
+/src/old_app.py
 
 
 /.env
