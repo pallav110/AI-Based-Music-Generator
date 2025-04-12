@@ -4,462 +4,661 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Music & Lyrics Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #ffeb3b;
+            --secondary: #000;
+            --accent: #ff5722;
+            --text-light: #f5f5f5;
+            --text-dark: #333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
         body {
-            padding-top: 2rem;
-            background-color: #f8f9fa;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
+            background-color: var(--secondary);
+            color: var(--primary);
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
         }
-        .main-container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-        textarea {
-            resize: vertical;
-            min-height: 150px;
-        }
-        .progress {
-            margin-top: 1rem;
-            margin-bottom: 1rem;
-            height: 1.5rem;
-        }
-        .audio-player {
+        
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            position: fixed;
             width: 100%;
-            margin-top: 1rem;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 235, 59, 0.2);
         }
-        .generation-info {
-            margin-top: 1rem;
-            padding: 0.5rem;
-            border-radius: 5px;
-            background-color: #f8f9fa;
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .help-text {
-            font-style: italic;
-            color: #6c757d;
-            margin-bottom: 1rem;
+        
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            font-weight: bold;
         }
-        h1, h2 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
+        
+        /* Main content */
+        main {
+            padding: 120px 5% 80px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Generator sections */
+        .generator-section {
+            background-color: rgba(30, 30, 30, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 235, 59, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
         .form-group {
             margin-bottom: 20px;
         }
+        
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: bold;
+            color: var(--text-light);
+            font-weight: 500;
         }
-        .status {
-            padding: 10px;
-            margin: 20px 0;
-            border-radius: 4px;
+        
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 235, 59, 0.3);
+            background-color: rgba(50, 50, 50, 0.7);
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: border 0.3s ease;
         }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
         }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
+        
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
         }
-        .result {
+        
+        .btn {
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--secondary);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 235, 59, 0.3);
+        }
+        
+        /* Results section */
+        .result-container {
+            display: none;
+            margin-top: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .result-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .lyrics-result {
             white-space: pre-wrap;
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-            margin-top: 20px;
-            font-family: monospace;
+            background-color: rgba(40, 40, 40, 0.7);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 235, 59, 0.2);
+            margin-bottom: 20px;
         }
-        .loading {
-            text-align: center;
+        
+        .audio-player {
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
+            background-color: rgba(40, 40, 40, 0.7);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn-secondary {
+            background-color: rgba(255, 235, 59, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(255, 235, 59, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background-color: rgba(255, 235, 59, 0.2);
+        }
+        
+        /* Status indicators */
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
             display: none;
         }
+        
+        .status-processing {
+            background-color: rgba(33, 150, 243, 0.2);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            color: var(--text-light);
+        }
+        
+        .status-success {
+            background-color: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            color: var(--text-light);
+        }
+        
+        .status-error {
+            background-color: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            color: var(--text-light);
+        }
+        
+        .progress-container {
+            margin-top: 15px;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        /* Loading spinner */
         .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #3498db;
-            animation: spin 1s linear infinite;
             display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 235, 59, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
         }
+        
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
-        .tab-content {
-            padding: 20px 0;
+        
+        /* Glow effects */
+        .glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.3;
+            z-index: -1;
         }
-        .nav-tabs {
-            margin-bottom: 20px;
+        
+        .glow-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            top: -150px;
+            left: -150px;
+        }
+        
+        .glow-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent);
+            bottom: -200px;
+            right: -200px;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            main {
+                padding: 100px 5% 60px;
+            }
+            
+            .section-title {
+                font-size: 1.8rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>AI Music & Lyrics Generator</h1>
-        
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="lyrics-tab" data-bs-toggle="tab" data-bs-target="#lyrics" type="button" role="tab">Lyrics Generator</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="music-tab" data-bs-toggle="tab" data-bs-target="#music" type="button" role="tab">Music Generator</button>
-            </li>
-        </ul>
-        
-        <div class="tab-content" id="myTabContent">
-            <!-- Lyrics Generator Tab -->
-            <div class="tab-pane fade show active" id="lyrics" role="tabpanel">
-                <div id="lyrics-status-box" class="status"></div>
-
-                <form id="lyrics-generator-form">
-                    <div class="form-group">
-                        <label for="seed">Seed (optional)</label>
-                        <input type="text" id="seed" name="seed" class="form-control" placeholder="Enter a few words to start your lyrics">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="emotion">Emotion</label>
-                        <select id="emotion" name="emotion" class="form-control">
-                            <!-- Will be populated dynamically -->
-                            <option value="happy">happy</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="structure">Song Structure (comma separated)</label>
-                        <input type="text" id="structure" name="structure" class="form-control" placeholder="verse, chorus, verse, chorus, bridge, chorus">
-                    </div>
-
-                    <button type="submit" id="generate-lyrics-btn" class="btn btn-primary">Generate Lyrics</button>
-                </form>
-
-                <div class="loading" id="lyrics-loading">
-                    <div class="spinner"></div>
-                    <p>Generating lyrics... This may take a minute.</p>
-                </div>
-
-                <div id="lyrics-result-container" style="display: none;">
-                    <h3>Generated Lyrics</h3>
-                    <div id="lyrics-result" class="result"></div>
-                    
-                    <button id="copy-btn" class="btn btn-secondary mt-3">Copy to Clipboard</button>
-                </div>
-            </div>
-            
-            <!-- Music Generator Tab -->
-            <div class="tab-pane fade" id="music" role="tabpanel">
-                <div class="help-text">
-                    <p>Enter lyrics with section markers like [VERSE], [CHORUS], etc. to generate music that follows your song structure.</p>
-                </div>
-                
-                <form id="music-generation-form">
-                    <div class="form-group">
-                        <label for="lyrics" class="form-label">Song Lyrics:</label>
-                        <textarea class="form-control" id="lyrics" name="lyrics" required placeholder="Enter your lyrics with section markers like [VERSE], [CHORUS], [BRIDGE], etc."></textarea>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary" id="generate-music-btn">Generate Music</button>
-                </form>
-                
-                <div id="music-generating-status" class="mt-4 d-none">
-                    <h4 id="music-status-text">Processing...</h4>
-                    <div class="progress">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="music-progress-bar"></div>
-                    </div>
-                    <div class="generation-info">
-                        <p>The AI is analyzing your lyrics, determining the musical style, and generating the composition. This typically takes 30-60 seconds.</p>
-                    </div>
-                </div>
-                
-                <div id="music-result-section" class="mt-4 d-none">
-                    <h4>Your Generated Song</h4>
-                    <audio controls id="music-audio-player" class="audio-player"></audio>
-                    <div class="d-grid gap-2 mt-3">
-                        <a id="music-download-btn" class="btn btn-success" download>Download Song</a>
-                        <button id="new-music-btn" class="btn btn-outline-primary">Generate Another Song</button>
-                    </div>
-                </div>
-                
-                <div id="music-error-section" class="mt-4 d-none alert alert-danger">
-                    <h4>Error</h4>
-                    <p id="music-error-text"></p>
-                    <button id="music-try-again-btn" class="btn btn-outline-danger">Try Again</button>
-                </div>
-            </div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    
+    <!-- Navigation bar -->
+    <nav>
+        <div class="logo-container">
+            <div class="logo-img">MG</div>
+            <div class="logo-text">Music Generator</div>
         </div>
-    </div>
+    </nav>
+    
+    <!-- Main content -->
+    <main>
+        <!-- Lyrics Generator Section -->
+        <section class="generator-section">
+            <h2 class="section-title">AI Lyrics Generator</h2>
+            
+            <form id="lyrics-generator-form">
+                <div class="form-group">
+                    <label for="seed">Seed Text (optional)</label>
+                    <input type="text" id="seed" name="seed" placeholder="Enter a few words to start your lyrics">
+                </div>
+                
+                <div class="form-group">
+                    <label for="emotion">Emotion</label>
+                    <select id="emotion" name="emotion">
+                        <option value="happy">Happy</option>
+                        <option value="sad">Sad</option>
+                        <option value="emotional">Emotional</option>
+                        <option value="energetic">Energetic</option>
+                        <option value="romantic">Romantic</option>
+                        <option value="relaxed">Relaxed</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="structure">Song Structure (comma separated)</label>
+                    <input type="text" id="structure" name="structure" placeholder="verse, chorus, verse, chorus, bridge, chorus">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="generate-lyrics-btn">
+                    <span id="lyrics-btn-text">Generate Lyrics</span>
+                </button>
+            </form>
+            
+            <div class="status" id="lyrics-status"></div>
+            
+            <div class="result-container" id="lyrics-result-container">
+                <h3 class="result-title">Generated Lyrics</h3>
+                <div class="lyrics-result" id="lyrics-result"></div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="copy-lyrics-btn">
+                        <i class="fas fa-copy"></i> Copy Lyrics
+                    </button>
+                    <button class="btn btn-secondary" id="use-for-music-btn">
+                        <i class="fas fa-music"></i> Use for Music Generation
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Music Generator Section -->
+        <section class="generator-section">
+            <h2 class="section-title">AI Music Generator</h2>
+            
+            <form id="music-generator-form">
+                <div class="form-group">
+                    <label for="lyrics">Lyrics</label>
+                    <textarea id="lyrics" name="lyrics" placeholder="Enter your lyrics with section markers like [VERSE], [CHORUS], etc." required></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="generate-music-btn">
+                    <span id="music-btn-text">Generate Music</span>
+                </button>
+            </form>
+            
+            <div class="status" id="music-status"></div>
+            
+            <div class="result-container" id="music-result-container">
+                <h3 class="result-title">Generated Music</h3>
+                <audio controls class="audio-player" id="audio-player"></audio>
+                
+                <div class="action-buttons">
+                    <a class="btn btn-secondary" id="download-music-btn">
+                        <i class="fas fa-download"></i> Download Music
+                    </a>
+                    <button class="btn btn-secondary" id="new-music-btn">
+                        <i class="fas fa-redo"></i> Generate New
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Check if the model is initialized on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // Check health
-                const response = await fetch('/health');
-                const data = await response.json();
-                
-                if (!data.lyrics_model_initialized) {
-                    showLyricsStatus('Lyrics model not initialized. Some features may not work.', 'error');
-                }
-                
-                if (!data.music_generation_ready) {
-                    showMusicStatus('Music generation not ready. Some features may not work.', 'error');
-                }
-                
-                // Populate emotions dropdown
-                if (data.emotions && data.emotions.length > 0) {
-                    const emotionSelect = document.getElementById('emotion');
-                    emotionSelect.innerHTML = '';
-                    
-                    data.emotions.forEach(emotion => {
-                        const option = document.createElement('option');
-                        option.value = emotion;
-                        option.textContent = emotion;
-                        emotionSelect.appendChild(option);
-                    });
-                }
-                
-                // Load recommended structure
-                loadSongStructures();
-                
-            } catch (error) {
-                console.error('Error checking health:', error);
-                showLyricsStatus('Error connecting to server', 'error');
-                showMusicStatus('Error connecting to server', 'error');
-            }
-        });
-        
-        // Load song structures
-        async function loadSongStructures() {
-            try {
-                const response = await fetch('/api/song_structure');
-                const data = await response.json();
-                
-                if (data.success && data.structures.length > 0) {
-                    // Set default structure
-                    document.getElementById('structure').value = data.structures[0].join(', ');
-                }
-            } catch (error) {
-                console.error('Error loading song structures:', error);
-            }
-        }
-        
-        // Lyrics Form submission
-        document.getElementById('lyrics-generator-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Clear previous results
-            document.getElementById('lyrics-result-container').style.display = 'none';
-            document.getElementById('lyrics-result').textContent = '';
-            
-            // Show loading
-            document.getElementById('lyrics-loading').style.display = 'block';
-            
-            // Get form data
-            const formData = new FormData(e.target);
-            
-            try {
-                const response = await fetch('/generate_lyrics', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                // Hide loading
-                document.getElementById('lyrics-loading').style.display = 'none';
-                
-                if (data.success) {
-                    // Show results
-                    document.getElementById('lyrics-result').textContent = data.lyrics;
-                    document.getElementById('lyrics-result-container').style.display = 'block';
-                } else {
-                    showLyricsStatus(data.error, 'error');
-                }
-                
-            } catch (error) {
-                console.error('Error generating lyrics:', error);
-                document.getElementById('lyrics-loading').style.display = 'none';
-                showLyricsStatus('Error connecting to server', 'error');
-            }
-        });
-        
-        // Copy to clipboard
-        document.getElementById('copy-btn').addEventListener('click', () => {
-            const lyrics = document.getElementById('lyrics-result').textContent;
-            navigator.clipboard.writeText(lyrics).then(() => {
-                showLyricsStatus('Copied to clipboard!', 'success');
-            }).catch(err => {
-                console.error('Error copying text:', err);
-                showLyricsStatus('Failed to copy to clipboard', 'error');
-            });
-        });
-        
-        // Helper to show lyrics status messages
-        function showLyricsStatus(message, type) {
-            const statusBox = document.getElementById('lyrics-status-box');
-            statusBox.textContent = message;
-            statusBox.className = `status ${type}`;
-            
-            // Auto-hide success messages after 5 seconds
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusBox.textContent = '';
-                    statusBox.className = 'status';
-                }, 5000);
-            }
-        }
-        
-        // Helper to show music status messages
-        function showMusicStatus(message, type) {
-            const statusBox = document.getElementById('music-error-text');
-            statusBox.textContent = message;
-            
-            if (type === 'error') {
-                document.getElementById('music-error-section').classList.remove('d-none');
-            }
-        }
-        
-        // Music Generation Logic
         document.addEventListener('DOMContentLoaded', function() {
-            const musicForm = document.getElementById('music-generation-form');
+            // Check if models are initialized
+            checkModelsStatus();
+            
+            // Lyrics Generation Form
+            const lyricsForm = document.getElementById('lyrics-generator-form');
+            const lyricsResultContainer = document.getElementById('lyrics-result-container');
+            const lyricsResult = document.getElementById('lyrics-result');
+            const lyricsStatus = document.getElementById('lyrics-status');
+            const generateLyricsBtn = document.getElementById('generate-lyrics-btn');
+            const lyricsBtnText = document.getElementById('lyrics-btn-text');
+            
+            lyricsForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Reset UI
+                lyricsResultContainer.style.display = 'none';
+                lyricsStatus.style.display = 'none';
+                
+                // Show loading state
+                generateLyricsBtn.disabled = true;
+                lyricsBtnText.innerHTML = '<span class="spinner"></span> Generating...';
+                
+                // Get form data
+                const formData = new FormData(lyricsForm);
+                
+                try {
+                    // Send request to server
+                    const response = await fetch('/generate_lyrics', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Display results
+                        lyricsResult.textContent = data.lyrics;
+                        lyricsResultContainer.style.display = 'block';
+                        
+                        // Show success message
+                        lyricsStatus.textContent = 'Lyrics generated successfully!';
+                        lyricsStatus.className = 'status status-success';
+                        lyricsStatus.style.display = 'block';
+                    } else {
+                        // Show error message
+                        lyricsStatus.textContent = data.error || 'Error generating lyrics';
+                        lyricsStatus.className = 'status status-error';
+                        lyricsStatus.style.display = 'block';
+                    }
+                } catch (error) {
+                    lyricsStatus.textContent = 'Error connecting to server';
+                    lyricsStatus.className = 'status status-error';
+                    lyricsStatus.style.display = 'block';
+                } finally {
+                    // Reset button state
+                    generateLyricsBtn.disabled = false;
+                    lyricsBtnText.textContent = 'Generate Lyrics';
+                }
+            });
+            
+            // Copy lyrics button
+            document.getElementById('copy-lyrics-btn').addEventListener('click', function() {
+                navigator.clipboard.writeText(lyricsResult.textContent).then(() => {
+                    const status = document.getElementById('lyrics-status');
+                    status.textContent = 'Lyrics copied to clipboard!';
+                    status.className = 'status status-success';
+                    status.style.display = 'block';
+                    
+                    // Hide after 3 seconds
+                    setTimeout(() => {
+                        status.style.display = 'none';
+                    }, 3000);
+                });
+            });
+            
+            // Use lyrics for music generation button
+            document.getElementById('use-for-music-btn').addEventListener('click', function() {
+                document.getElementById('lyrics').value = lyricsResult.textContent;
+                
+                // Scroll to music generator section
+                document.querySelector('#music-generator-form').scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Music Generation Form
+            const musicForm = document.getElementById('music-generator-form');
+            const musicResultContainer = document.getElementById('music-result-container');
+            const audioPlayer = document.getElementById('audio-player');
+            const musicStatus = document.getElementById('music-status');
             const generateMusicBtn = document.getElementById('generate-music-btn');
-            const generatingStatus = document.getElementById('music-generating-status');
-            const resultSection = document.getElementById('music-result-section');
-            const errorSection = document.getElementById('music-error-section');
-            const statusText = document.getElementById('music-status-text');
-            const progressBar = document.getElementById('music-progress-bar');
-            const audioPlayer = document.getElementById('music-audio-player');
-            const downloadBtn = document.getElementById('music-download-btn');
-            const newSongBtn = document.getElementById('new-music-btn');
-            const tryAgainBtn = document.getElementById('music-try-again-btn');
+            const musicBtnText = document.getElementById('music-btn-text');
+            const downloadMusicBtn = document.getElementById('download-music-btn');
+            const newMusicBtn = document.getElementById('new-music-btn');
             
             let musicJobId = null;
-            let musicStatusCheckInterval = null;
+            let statusCheckInterval = null;
             
-            musicForm.addEventListener('submit', function(e) {
+            musicForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                
+                // Reset UI
+                musicResultContainer.style.display = 'none';
+                musicStatus.style.display = 'none';
+                
+                // Show loading state
+                generateMusicBtn.disabled = true;
+                musicBtnText.innerHTML = '<span class="spinner"></span> Generating...';
                 
                 // Get form data
                 const formData = new FormData(musicForm);
                 
-                // Disable form and show generating status
-                generateMusicBtn.disabled = true;
-                generatingStatus.classList.remove('d-none');
-                resultSection.classList.add('d-none');
-                errorSection.classList.add('d-none');
-                
-                // Start generation
-                fetch('/generate_music', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
+                try {
+                    // Send request to server
+                    const response = await fetch('/generate_music', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
                     if (data.error) {
-                        showMusicError(data.error);
-                        return;
+                        throw new Error(data.error);
                     }
                     
+                    // Store job ID
                     musicJobId = data.job_id;
-                    statusText.textContent = 'Queued...';
-                    progressBar.style.width = '5%';
+                    
+                    // Show processing status
+                    musicStatus.innerHTML = `
+                        <div>Processing your music... This may take a minute.</div>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="music-progress-bar"></div>
+                        </div>
+                    `;
+                    musicStatus.className = 'status status-processing';
+                    musicStatus.style.display = 'block';
                     
                     // Start checking status
                     startMusicStatusCheck();
-                })
-                .catch(error => {
-                    showMusicError("Failed to start generation: " + error.message);
-                });
+                } catch (error) {
+                    musicStatus.textContent = error.message || 'Error starting music generation';
+                    musicStatus.className = 'status status-error';
+                    musicStatus.style.display = 'block';
+                    
+                    // Reset button state
+                    generateMusicBtn.disabled = false;
+                    musicBtnText.textContent = 'Generate Music';
+                }
             });
             
             function startMusicStatusCheck() {
-                if (musicStatusCheckInterval) {
-                    clearInterval(musicStatusCheckInterval);
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
                 }
                 
-                musicStatusCheckInterval = setInterval(() => {
+                statusCheckInterval = setInterval(async () => {
                     if (!musicJobId) {
-                        clearInterval(musicStatusCheckInterval);
+                        clearInterval(statusCheckInterval);
                         return;
                     }
                     
-                    fetch(`/music_status/${musicJobId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            // Update progress
+                    try {
+                        const response = await fetch(`/music_status/${musicJobId}`);
+                        const data = await response.json();
+                        
+                        // Update progress
+                        const progressBar = document.getElementById('music-progress-bar');
+                        if (progressBar) {
                             progressBar.style.width = `${data.progress}%`;
+                        }
+                        
+                        if (data.status === 'completed') {
+                            // Generation complete
+                            clearInterval(statusCheckInterval);
                             
-                            if (data.status === 'queued') {
-                                statusText.textContent = 'Queued...';
-                            } else if (data.status === 'processing') {
-                                statusText.textContent = 'Generating your music...';
-                            } else if (data.status === 'completed') {
-                                statusText.textContent = 'Complete!';
-                                showMusicResult(data.download_url);
-                                clearInterval(musicStatusCheckInterval);
-                            } else if (data.status === 'failed') {
-                                showMusicError(data.error || 'Generation failed');
-                                clearInterval(musicStatusCheckInterval);
-                            }
-                        })
-                        .catch(error => {
-                            showMusicError("Failed to check status: " + error.message);
-                            clearInterval(musicStatusCheckInterval);
-                        });
+                            // Set audio source
+                            audioPlayer.src = data.download_url;
+                            
+                            // Set download link
+                            downloadMusicBtn.href = data.download_url;
+                            downloadMusicBtn.download = `generated_music_${musicJobId}.wav`;
+                            
+                            // Show results
+                            musicResultContainer.style.display = 'block';
+                            
+                            // Update status
+                            musicStatus.textContent = 'Music generated successfully!';
+                            musicStatus.className = 'status status-success';
+                            
+                            // Reset button state
+                            generateMusicBtn.disabled = false;
+                            musicBtnText.textContent = 'Generate Music';
+                        } else if (data.status === 'failed') {
+                            // Generation failed
+                            clearInterval(statusCheckInterval);
+                            
+                            musicStatus.textContent = data.error || 'Music generation failed';
+                            musicStatus.className = 'status status-error';
+                            
+                            // Reset button state
+                            generateMusicBtn.disabled = false;
+                            musicBtnText.textContent = 'Generate Music';
+                        }
+                    } catch (error) {
+                        console.error('Error checking status:', error);
+                    }
                 }, 2000); // Check every 2 seconds
             }
             
-            function showMusicResult(downloadUrl) {
-                // Hide status and show result
-                generatingStatus.classList.add('d-none');
-                resultSection.classList.remove('d-none');
-                
-                // Set audio source and download link
-                audioPlayer.src = downloadUrl;
-                downloadBtn.href = downloadUrl;
-                
-                // Re-enable form
-                generateMusicBtn.disabled = false;
-            }
-            
-            function showMusicError(message) {
-                // Hide status and show error
-                generatingStatus.classList.add('d-none');
-                errorSection.classList.remove('d-none');
-                
-                // Set error message
-                document.getElementById('music-error-text').textContent = message || 'An unknown error occurred';
-                
-                // Re-enable form
-                generateMusicBtn.disabled = false;
-            }
-            
-            // New song button handler
-            newSongBtn.addEventListener('click', function() {
-                resultSection.classList.add('d-none');
+            // New music button
+            newMusicBtn.addEventListener('click', function() {
                 musicForm.reset();
+                musicResultContainer.style.display = 'none';
+                musicStatus.style.display = 'none';
             });
             
-            // Try again button handler
-            tryAgainBtn.addEventListener('click', function() {
-                errorSection.classList.add('d-none');
-                musicForm.reset();
-            });
+            // Check if models are initialized
+            async function checkModelsStatus() {
+                try {
+                    const response = await fetch('/health');
+                    const data = await response.json();
+                    
+                    if (!data.lyrics_model_initialized) {
+                        showAlert('Lyrics model not initialized. Some features may not work.', 'error');
+                    }
+                    
+                    if (!data.music_generation_ready) {
+                        showAlert('Music generation not ready. Some features may not work.', 'error');
+                    }
+                    
+                    // Populate emotions if available
+                    if (data.emotions && data.emotions.length > 0) {
+                        const emotionSelect = document.getElementById('emotion');
+                        emotionSelect.innerHTML = '';
+                        
+                        data.emotions.forEach(emotion => {
+                            const option = document.createElement('option');
+                            option.value = emotion;
+                            option.textContent = emotion.charAt(0).toUpperCase() + emotion.slice(1);
+                            emotionSelect.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error checking models status:', error);
+                }
+            }
+            
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `status status-${type}`;
+                alertDiv.textContent = message;
+                alertDiv.style.marginTop = '20px';
+                document.querySelector('main').prepend(alertDiv);
+                
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
         });
     </script>
 </body>
