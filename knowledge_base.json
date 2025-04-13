@@ -1,0 +1,51 @@
+[
+  {
+    "text": "To generate music, provide lyrics and select an emotion. The system will create a song matching the mood.",
+    "metadata": {
+      "source": "system",
+      "type": "music_generation"
+    }
+  },
+  {
+    "text": "Available emotions for lyrics generation: happy, sad, emotional, energetic, romantic, relaxed.",
+    "metadata": {
+      "source": "system",
+      "type": "lyrics_generation"
+    }
+  },
+  {
+    "text": "Check music generation status using the job ID returned when you started the process.",
+    "metadata": {
+      "source": "system",
+      "type": "music_status"
+    }
+  },
+  {
+    "text": "Music theory is the study of the practices and possibilities of music. It generally derives from observation of how musicians and composers make music.",
+    "source": "music_theory_basics"
+  },
+  {
+    "text": "A chord is a group of notes played together. The most common chords are triads, consisting of three notes: the root, third, and fifth.",
+    "source": "chord_theory"
+  },
+  {
+    "text": "Song structure typically includes sections like intro, verse, chorus, bridge, and outro. Pop songs often follow a verse-chorus-verse-chorus-bridge-chorus structure.",
+    "source": "songwriting_guide"
+  },
+  {
+    "text": "A digital audio workstation (DAW) is an electronic device or application software used for recording, editing and producing audio files.",
+    "source": "production_tools"
+  },
+  {
+    "text": "Music theory is the study of music practices.",
+    "source": "test_source"
+  },
+  {
+    "text": "A chord is a group of notes played together.",
+    "source": "chord_theory"
+  },
+  {
+    "text": "Song structure includes intro, verse, chorus, bridge, and outro.",
+    "source": "songwriting_guide"
+  }
+]

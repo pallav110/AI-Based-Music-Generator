@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-
+from rag_module import RAGSystem
 from flask import Flask, request, render_template, jsonify, send_file
 import torch
 import numpy as np
@@ -66,6 +66,8 @@ from audiocraft.data.audio import audio_write
 # Suppress unnecessary warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
+# Initialize RAG system
+rag_system = RAGSystem.from_default_config()
 
 app = Flask(__name__)
 
@@ -1289,6 +1291,10 @@ def home():
     """Homepage with featured content"""
     return render_template('home.html', active_page='home')
 
+@app.route('/features')
+def features():
+    return render_template('features.html')
+
 @app.route('/generate')
 def generate():
     """Main generator page"""
@@ -1624,7 +1630,24 @@ def health_check():
         'device': str(device),
         'emotions': list(lyrics_preprocessor.emotion_to_idx.keys()) if lyrics_model_initialized and lyrics_preprocessor else []
     })
-
+    
+@app.route('/chatbot', methods=['POST'])
+def chatbot():
+    data = request.json
+    user_message = data.get('message')
+    context = data.get('context', {})
+    
+    # Get response from RAG system
+    response = rag_system.generate_response(
+        user_message=user_message,
+        project_context=context
+    )
+    
+    return jsonify({
+        "response": response["answer"],
+        "action": response.get("action")  # Optional: if you want the bot to trigger UI changes
+    })
+    
 def setup_dirs():
     """Create necessary directories on startup"""
     # Create static folder if it doesn't exist
