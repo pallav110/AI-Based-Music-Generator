@@ -1,51 +1,299 @@
 [
   {
-    "text": "To generate music, provide lyrics and select an emotion. The system will create a song matching the mood.",
+    "text": "The AI Emotion-Based Song Generator creates custom music based on your selected emotion. Choose from happy, sad, emotional, energetic, romantic, or relaxed to generate lyrics and instrumental music that match your desired mood.",
     "metadata": {
       "source": "system",
-      "type": "music_generation"
-    }
+      "type": "overview",
+      "priority": "high"
+    },
+    "id": "overview001"
   },
   {
-    "text": "Available emotions for lyrics generation: happy, sad, emotional, energetic, romantic, relaxed.",
+    "text": "To generate music, first select an emotion from the dropdown menu, then optionally provide your own lyrics or let the system generate them for you. Click 'Generate' to create your custom song with matching instrumental backing.",
     "metadata": {
       "source": "system",
-      "type": "lyrics_generation"
-    }
+      "type": "music_generation",
+      "priority": "high"
+    },
+    "id": "music_gen001"
   },
   {
-    "text": "Check music generation status using the job ID returned when you started the process.",
+    "text": "Available emotions for music generation: happy (upbeat, major key), sad (slower tempo, minor key), emotional (dynamic, expressive), energetic (fast tempo, powerful), romantic (melodic, smooth), and relaxed (gentle, ambient).",
     "metadata": {
       "source": "system",
-      "type": "music_status"
-    }
+      "type": "emotions_guide",
+      "priority": "medium"
+    },
+    "id": "emotions001"
   },
   {
-    "text": "Music theory is the study of the practices and possibilities of music. It generally derives from observation of how musicians and composers make music.",
-    "source": "music_theory_basics"
+    "text": "Lyrics generation is powered by an AI language model that creates original lyrics based on your selected emotion. You can also edit or provide your own lyrics in the text area before generating the final song.",
+    "metadata": {
+      "source": "system",
+      "type": "lyrics_generation",
+      "priority": "high"
+    },
+    "id": "lyrics001"
   },
   {
-    "text": "A chord is a group of notes played together. The most common chords are triads, consisting of three notes: the root, third, and fifth.",
-    "source": "chord_theory"
+    "text": "The instrumental music generator creates original backing tracks with appropriate instruments, chord progressions, and tempo based on the selected emotion. Each track is unique and crafted to complement the lyrical content.",
+    "metadata": {
+      "source": "system",
+      "type": "instrumental_generation",
+      "priority": "high"
+    },
+    "id": "instrumental001"
   },
   {
-    "text": "Song structure typically includes sections like intro, verse, chorus, bridge, and outro. Pop songs often follow a verse-chorus-verse-chorus-bridge-chorus structure.",
-    "source": "songwriting_guide"
+    "text": "Our AI singing voice feature uses DiffSinger technology to create realistic vocal performances of your lyrics. The voice adapts to the emotion selected, adjusting pitch, timing, and expression to match the mood of the song.",
+    "metadata": {
+      "source": "system",
+      "type": "singing_voice",
+      "priority": "high"
+    },
+    "id": "voice001"
   },
   {
-    "text": "A digital audio workstation (DAW) is an electronic device or application software used for recording, editing and producing audio files.",
-    "source": "production_tools"
+    "text": "DiffSinger is a neural network-based singing voice synthesis system that generates realistic vocal performances from lyrics and melody. It creates natural-sounding vibrato, dynamics, and articulation that closely resemble human singing.",
+    "metadata": {
+      "source": "system",
+      "type": "diffsinger",
+      "priority": "medium"
+    },
+    "id": "diffsinger001"
   },
   {
-    "text": "Music theory is the study of music practices.",
-    "source": "test_source"
+    "text": "When generating music, the system assigns a unique job ID that you can use to check the status of your generation process. Generation typically takes 30-60 seconds for lyrics, 1-2 minutes for instrumental, and 2-3 minutes for the AI singing voice.",
+    "metadata": {
+      "source": "system",
+      "type": "music_status",
+      "priority": "medium"
+    },
+    "id": "status001"
   },
   {
-    "text": "A chord is a group of notes played together.",
-    "source": "chord_theory"
+    "text": "Happy emotion songs typically feature upbeat tempos (90-120 BPM), major keys, bright instrumentations with piano, acoustic guitar, and uplifting percussion. Lyrics often focus on positive themes, celebrations, or optimistic perspectives.",
+    "metadata": {
+      "source": "emotion_profiles",
+      "type": "happy_profile",
+      "priority": "medium"
+    },
+    "id": "happy001"
   },
   {
-    "text": "Song structure includes intro, verse, chorus, bridge, and outro.",
-    "source": "songwriting_guide"
+    "text": "Sad emotion songs generally use slower tempos (60-80 BPM), minor keys, sparse instrumentation often featuring piano, strings, or ambient elements. Lyrics typically explore themes of loss, heartbreak, reflection, or melancholy.",
+    "metadata": {
+      "source": "emotion_profiles",
+      "type": "sad_profile",
+      "priority": "medium"
+    },
+    "id": "sad001"
+  },
+  {
+    "text": "Emotional songs feature dynamic arrangements with varying intensities, often using piano, strings, and crescendos. They typically have memorable melodies and lyrics that evoke strong feelings through personal storytelling.",
+    "metadata": {
+      "source": "emotion_profiles",
+      "type": "emotional_profile",
+      "priority": "medium"
+    },
+    "id": "emotional001"
+  },
+  {
+    "text": "Energetic songs use fast tempos (120-140+ BPM), punchy drum patterns, electric guitars, synths, and rhythmic elements. Lyrics often focus on action, motivation, overcoming challenges, or celebration.",
+    "metadata": {
+      "source": "emotion_profiles",
+      "type": "energetic_profile",
+      "priority": "medium"
+    },
+    "id": "energetic001"
+  },
+  {
+    "text": "Romantic songs typically feature smooth melodic lines, moderate tempos (70-100 BPM), lush instrumentation with strings, piano, and subtle percussion. Lyrics focus on love, connection, relationships, and intimate emotions.",
+    "metadata": {
+      "source": "emotion_profiles",
+      "type": "romantic_profile",
+      "priority": "medium"
+    },
+    "id": "romantic001"
+  },
+  {
+    "text": "Relaxed songs use gentle tempos (60-85 BPM), ambient sounds, acoustic instruments, minimal percussion, and spacious arrangements. Lyrics often explore themes of peace, nature, reflection, mindfulness, or gentle contemplation.",
+    "metadata": {
+      "source": "emotion_profiles",
+      "type": "relaxed_profile",
+      "priority": "medium"
+    },
+    "id": "relaxed001"
+  },
+  {
+    "text": "After generating your song, you can download the full track, separate instrumental backing, lyrics as text, or share directly to social media platforms from the 'Export' menu.",
+    "metadata": {
+      "source": "system",
+      "type": "export_options",
+      "priority": "medium"
+    },
+    "id": "export001"
+  },
+  {
+    "text": "The 'History' tab shows your previously generated songs, which you can revisit, edit, or regenerate with different settings. Songs are stored for 30 days unless saved to your account.",
+    "metadata": {
+      "source": "system",
+      "type": "history_feature",
+      "priority": "low"
+    },
+    "id": "history001"
+  },
+  {
+    "text": "Premium users can access additional voice models, higher quality audio generation, extended song lengths, and the ability to fine-tune specific musical parameters like instrumentation and tempo.",
+    "metadata": {
+      "source": "system",
+      "type": "premium_features",
+      "priority": "low"
+    },
+    "id": "premium001"
+  },
+  {
+    "text": "The AI singing voice synthesis process involves converting lyrics to phonemes, generating a singing voice waveform using DiffSinger's neural network, and then applying post-processing for natural vocal qualities.",
+    "metadata": {
+      "source": "technical",
+      "type": "voice_synthesis",
+      "priority": "medium"
+    },
+    "id": "voicetech001"
+  },
+  {
+    "text": "Song structure typically includes sections like intro, verse, chorus, bridge, and outro. The system automatically arranges your lyrics into an appropriate structure based on the selected emotion and lyrical content.",
+    "metadata": {
+      "source": "songwriting_guide",
+      "type": "song_structure",
+      "priority": "medium"
+    },
+    "id": "structure001"
+  },
+  {
+    "text": "Chord progressions are sequences of chords that form the harmonic foundation of a song. Different emotions typically use different chord progressions - happy songs often use major progressions like I-V-vi-IV, while sad songs might use minor progressions like i-VI-III-VII.",
+    "metadata": {
+      "source": "chord_theory",
+      "type": "chord_progressions",
+      "priority": "medium"
+    },
+    "id": "chords001"
+  },
+  {
+    "text": "The system supports multiple languages for lyrics generation including English, Spanish, French, German, Italian, Portuguese, and Japanese. Voice synthesis quality may vary by language.",
+    "metadata": {
+      "source": "system",
+      "type": "language_support",
+      "priority": "medium"
+    },
+    "id": "language001"
+  },
+  {
+    "text": "Music theory is the study of the practices and possibilities of music. The AI song generator applies music theory principles to create harmonically appropriate compositions that properly express the selected emotion.",
+    "metadata": {
+      "source": "music_theory_basics",
+      "type": "theory_application",
+      "priority": "low"
+    },
+    "id": "theory001"
+  },
+  {
+    "text": "A chord is a group of notes played together. The song generator uses appropriate chord voicings and progressions based on the emotional context of your song to create a harmonically rich backing track.",
+    "metadata": {
+      "source": "chord_theory",
+      "type": "chord_application",
+      "priority": "medium"
+    },
+    "id": "chord002"
+  },
+  {
+    "text": "Typical pop song structure includes intro, verse, pre-chorus, chorus, verse, pre-chorus, chorus, bridge, and final chorus. The AI automatically arranges your song following proven structural patterns for the selected emotion.",
+    "metadata": {
+      "source": "songwriting_guide",
+      "type": "pop_structure",
+      "priority": "medium"
+    },
+    "id": "structure002"
+  },
+  {
+    "text": "The AI singing voice can be customized with different vocal characteristics including age, gender, tone, vibrato amount, and breathiness. Premium users can access more voice customization options.",
+    "metadata": {
+      "source": "system",
+      "type": "voice_customization",
+      "priority": "medium"
+    },
+    "id": "voicecustom001"
+  },
+  {
+    "text": "Behind the scenes, the system uses deep learning models for each generation step: GPT-based models for lyrics, a custom neural network for instrumental generation, and DiffSinger for the singing voice synthesis.",
+    "metadata": {
+      "source": "technical",
+      "type": "architecture",
+      "priority": "medium"
+    },
+    "id": "tech001"
+  },
+  {
+    "text": "DiffSinger uses a diffusion probabilistic model to generate high-quality singing voices. It works by gradually denoising a signal and adding vocal characteristics based on the lyrics, melody, and emotional context.",
+    "metadata": {
+      "source": "technical",
+      "type": "diffsinger_technical",
+      "priority": "medium"
+    },
+    "id": "diffsingertech001"
+  },
+  {
+    "text": "To achieve the best results when generating an AI singing voice, provide clear, well-structured lyrics with proper punctuation. The system will automatically align the vocals with the instrumental track for optimal timing.",
+    "metadata": {
+      "source": "system",
+      "type": "best_practices",
+      "priority": "high"
+    },
+    "id": "practices001"
+  },
+  {
+    "text": "When generating music, you can optionally provide reference tracks or artists to influence the style of the instrumental generation. This works best with Premium accounts that have access to the style matching feature.",
+    "metadata": {
+      "source": "system",
+      "type": "style_matching",
+      "priority": "low"
+    },
+    "id": "style001"
+  },
+  {
+    "text": "The music generator creates original compositions and does not use samples from existing songs, ensuring that all generated content is unique and free from copyright concerns.",
+    "metadata": {
+      "source": "system",
+      "type": "copyright_info",
+      "priority": "medium"
+    },
+    "id": "copyright001"
+  },
+  {
+    "text": "Melody is the main musical line of a song that you sing or hum. The AI creates melodies suited to the emotional context using appropriate scales, intervals, and rhythmic patterns that complement the lyrics.",
+    "metadata": {
+      "source": "music_theory_basics",
+      "type": "melody",
+      "priority": "medium"
+    },
+    "id": "melody001"
+  },
+  {
+    "text": "Harmonization is the process of adding chords to a melody. The AI system automatically creates harmonically rich accompaniments that support the melody and enhance the emotional quality of the song.",
+    "metadata": {
+      "source": "music_theory_basics",
+      "type": "harmony",
+      "priority": "medium"
+    },
+    "id": "harmony001"
+  },
+  {
+    "text": "The tempo of a song refers to its speed, measured in beats per minute (BPM). Different emotions typically use different tempo ranges: happy (90-120 BPM), sad (60-80 BPM), energetic (120-140+ BPM), etc.",
+    "metadata": {
+      "source": "music_theory_basics",
+      "type": "tempo",
+      "priority": "medium"
+    },
+    "id": "tempo001"
   }
 ]

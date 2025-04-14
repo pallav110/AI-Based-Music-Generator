@@ -915,7 +915,9 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
             animation: fadeIn 0.5s ease-out;
         }
-
+        .chatbot-welcome p {
+            margin: 10px 0;
+        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -1026,6 +1028,38 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .message-feedback {
+            margin-top: 5px;
+            font-size: 12px;
+        }
+        
+        .feedback-question {
+            margin-bottom: 3px;
+            color: #666;
+        }
+        
+        .feedback-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .feedback-btn {
+            background-color: transparent;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .feedback-btn:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .feedback-thank-you {
+            color: #4a86e8;
         }
 
         .chatbot-input button:hover {
@@ -1246,6 +1280,40 @@
 
 
         /* Vocal Result Styles */
+
+        btn-vocal {
+            background: linear-gradient(135deg, #ff5722, #ff9800);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-vocal:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 87, 34, 0.3);
+        }
+
+        .vocal-generation-container {
+            margin: 20px 0;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 87, 34, 0.1);
+            border-radius: 10px;
+            border: 1px dashed rgba(255, 87, 34, 0.3);
+        }
+        
+        .vocal-hint {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
         #vocal-result-container {
             margin-top: 30px;
             background: rgba(50, 50, 50, 0.7);
@@ -1475,7 +1543,7 @@
             </div>
         </section>
         
-]       <!-- Music Generator Section -->
+       <!-- Music Generator Section -->
         <section class="generator-section">
             <h2 class="section-title"><i class="fas fa-music"></i> AI Music Generator</h2>
             
@@ -1529,10 +1597,19 @@
                         <i class="fas fa-microphone"></i> Add Vocals
                     </button>
                 </div>
-                
+
+                <div class="vocal-generation-container" id="vocal-generation-container" style="display: none;">
+                    <button class="btn btn-vocal" id="generate-vocals-btn">
+                        <i class="fas fa-microphone"></i> Generate Vocals for These Lyrics
+                    </button>
+                    <p class="vocal-hint">Uses the lyrics from above</p>
+                </div>
+
                 <!-- Vocal Results - Only shown after vocal generation -->
-                <div class="vocal-section" id="vocal-result-container" style="display: none;">
-                    <h3 class="result-title"><i class="fas fa-microphone-alt"></i> Vocal Track</h3>
+                <div class="result-container" id="vocal-result-container" style="display: none;">
+                    <h3 class="result-title"><i class="fas fa-microphone-alt"></i> Generated Vocals</h3>
+                    <audio controls class="audio-player" id="vocal-player"></audio>
+
                     <div class="audio-container">
                         <div class="waveform" id="vocal-waveform"></div>
                         <audio controls class="audio-player" id="vocal-player"></audio>
@@ -1542,8 +1619,8 @@
                         <a class="btn btn-secondary" id="download-vocals-btn">
                             <i class="fas fa-download"></i> Download Vocals
                         </a>
-                        <button class="btn btn-mix" id="mix-tracks-btn">
-                            <i class="fas fa-sliders-h"></i> Mix Tracks
+                        <button class="btn btn-success" id="mix-tracks-btn">
+                            <i class="fas fa-sliders-h"></i> Mix With Music
                         </button>
                         <button class="btn btn-info" id="vocal-settings-btn">
                             <i class="fas fa-cog"></i> Settings
@@ -1712,6 +1789,7 @@
     </footer>
 
     <script>
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Check if models are initialized
 
@@ -2258,68 +2336,83 @@
             }
         });
 
+
+
+        // Make sure the DOM is fully loaded before attaching event listeners
         document.addEventListener('DOMContentLoaded', function() {
             // Chatbot UI Toggle
             const chatbotContainer = document.getElementById('chatbot-container');
             const chatbotToggle = document.getElementById('chatbot-toggle');
             const chatbotCloseBtn = document.getElementById('chatbot-close-btn');
+            const chatbotInput = document.getElementById('chatbot-input');
+            const chatbotSendBtn = document.getElementById('chatbot-send');
             
-            chatbotToggle.addEventListener('click', function() {
-                chatbotContainer.classList.toggle('active');
-            });
-            
-            chatbotCloseBtn.addEventListener('click', function() {
-                chatbotContainer.classList.remove('active');
-            });
-    
-            // Chatbot functionality
-            const chatInput = document.getElementById('chatbot-input');
-            const chatSendBtn = document.getElementById('chatbot-send');
-            const chatMessages = document.getElementById('chatbot-messages');
-            
-            function addMessage(text, isUser) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-                messageDiv.textContent = text;
-                chatMessages.appendChild(messageDiv);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Fix 1: Ensure toggle button works
+            if (chatbotToggle) {
+                chatbotToggle.addEventListener('click', function() {
+                    console.log('Toggle clicked');
+                    if (chatbotContainer) {
+                        chatbotContainer.classList.toggle('active');
+                    }
+                });
+            } else {
+                console.error('Chatbot toggle button not found');
             }
             
-            function showTypingIndicator() {
-                const typingDiv = document.createElement('div');
-                typingDiv.className = 'typing-indicator';
-                typingDiv.innerHTML = `
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                `;
-                chatMessages.appendChild(typingDiv);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                return typingDiv;
+            // Fix 2: Ensure close button works
+            if (chatbotCloseBtn) {
+                chatbotCloseBtn.addEventListener('click', function() {
+                    console.log('Close clicked');
+                    if (chatbotContainer) {
+                        chatbotContainer.classList.remove('active');
+                    }
+                });
+            } else {
+                console.error('Chatbot close button not found');
             }
             
-            function removeTypingIndicator(indicator) {
-                if (indicator && indicator.parentNode) {
-                    indicator.parentNode.removeChild(indicator);
-                }
+            // Setup event listeners for sending messages
+            if (chatbotInput && chatbotSendBtn) {
+                // Send message on button click
+                chatbotSendBtn.addEventListener('click', sendMessage);
+                
+                // Send message on Enter key
+                chatbotInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
             }
+
+            // Variables to maintain state
+            let sessionId = localStorage.getItem('chatSessionId') || generateSessionId();
+            let pendingResponseId = null;
+            let currentContext = {};
+            let recentMessages = [];
+                    
+            // Store session ID
+            localStorage.setItem('chatSessionId', sessionId);
             
+            // Send message to backend
             async function sendMessage() {
-                const message = chatInput.value.trim();
+                const chatMessages = document.getElementById('chatbot-messages');
+                
+                const message = chatbotInput.value.trim();
                 if (!message) return;
                 
+                // Clear input and add user message to chat
+                chatbotInput.value = '';
                 addMessage(message, true);
-                chatInput.value = '';
                 
+                // Show typing indicator
                 const typingIndicator = showTypingIndicator();
                 
                 try {
-                    // Get current project context
-                    const lyrics = document.getElementById('lyrics').value;
-                    const musicUrl = document.getElementById('audio-player').src;
-                    const currentTab = document.querySelector('.generator-section:not([style*="display: none"])')?.querySelector('.section-title')?.textContent;
+                    // Get current context data from the page
+                    // This should be adjusted based on your actual page structure
+                    currentContext = gatherContextFromPage();
                     
-                    // Send to your RAG endpoint
+                    // Make API call to backend
                     const response = await fetch('/chatbot', {
                         method: 'POST',
                         headers: {
@@ -2327,64 +2420,424 @@
                         },
                         body: JSON.stringify({
                             message: message,
-                            context: {
-                                lyrics: lyrics,
-                                hasMusic: !!musicUrl,
-                                currentTab: currentTab,
-                                // Add any other context you want to send
-                            }
+                            session_id: sessionId,
+                            context: currentContext
                         })
                     });
                     
-                    const data = await response.json();
+                    // Hide typing indicator
                     removeTypingIndicator(typingIndicator);
                     
-                    if (data.response) {
-                        addMessage(data.response, false);
-                        
-                        // If the bot suggests an action (like changing a setting)
-                        if (data.action) {
-                            handleBotAction(data.action);
-                        }
-                    } else {
-                        addMessage("I couldn't process that request. Please try again.", false);
+                    if (!response.ok) {
+                        throw new Error('API request failed');
                     }
+                    
+                    const data = await response.json();
+                    
+                    // Store the response ID for potential feedback
+                    pendingResponseId = data.response_id;
+                    
+                    // Update session history
+                    recentMessages.push({
+                        user_message: message,
+                        response: data.response,
+                        response_id: data.response_id
+                    });
+                    
+                    // Keep only last 5 messages for context
+                    if (recentMessages.length > 5) {
+                        recentMessages.shift();
+                    }
+                    
+                    // Add bot message to chat
+                    const messageElement = addMessage(data.response, false);
+                    
+                    // Add feedback buttons
+                    addFeedbackButtons(messageElement, data.response_id);
+                    
+                    // Handle any actions returned by the RAG system
+                    if (data.action) {
+                        handleAction(data.action);
+                    }
+                    
                 } catch (error) {
+                    console.error('Error sending message:', error);
                     removeTypingIndicator(typingIndicator);
-                    addMessage("Sorry, I'm having trouble connecting. Please try again later.", false);
-                    console.error('Chatbot error:', error);
+                    
+                    // Add error message
+                    addMessage("Sorry, I'm having trouble connecting to the server. Please try again later.", false);
                 }
             }
             
-            function handleBotAction(action) {
-                // Example of handling actions the bot might suggest
-                if (action.type === 'set_tempo') {
-                    document.getElementById('tempo').value = action.value;
-                    document.getElementById('tempo-value').textContent = action.value;
-                    addMessage(`I've set the tempo to ${action.value} BPM for you.`, false);
-                }
-                // Add more action handlers as needed
+            // Gather context from the current page state
+            function gatherContextFromPage() {
+                // Example - modify based on your actual page structure
+                let context = {
+                    currentTab: document.querySelector('.active-tab')?.dataset?.tab || 'chat',
+                    hasMusic: !!document.querySelector('#audio-player')?.src,
+                    lyrics: document.querySelector('#lyrics-editor')?.value || ''
+                };
+                
+                // Add any additional context from the page
+                return context;
             }
             
-            // Send message on button click or Enter key
-            chatSendBtn.addEventListener('click', sendMessage);
-            chatInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
+            // Handle actions returned by the RAG system
+            function handleAction(action) {
+                if (typeof action === 'string') {
+                    // Simple string actions
+                    switch(action) {
+                        case 'play_music':
+                            const audioPlayer = document.querySelector('#audio-player');
+                            if (audioPlayer && audioPlayer.src) {
+                                audioPlayer.play();
+                            }
+                            break;
+                            
+                        case 'generate_lyrics':
+                            // Trigger lyrics generation UI
+                            const lyricsBtn = document.querySelector('#generate-lyrics-btn');
+                            if (lyricsBtn) {
+                                lyricsBtn.click();
+                            }
+                            break;
+                            
+                        case 'generate_content':
+                            // Trigger content generation UI
+                            const generateBtn = document.querySelector('#generate-music-btn');
+                            if (generateBtn) {
+                                generateBtn.click();
+                            }
+                            break;
+                    }
+                } else if (typeof action === 'object') {
+                    // Complex action objects
+                    switch(action.type) {
+                        case 'set_tempo':
+                            const tempoInput = document.querySelector('#tempo-input');
+                            if (tempoInput && action.value) {
+                                tempoInput.value = action.value;
+                                // Trigger change event
+                                tempoInput.dispatchEvent(new Event('change'));
+                            }
+                            break;
+                            
+                        case 'suggest_genre_change':
+                            // Highlight the genre selector
+                            const genreSelector = document.querySelector('#genre-selector');
+                            if (genreSelector) {
+                                genreSelector.classList.add('highlight-suggestion');
+                                setTimeout(() => {
+                                    genreSelector.classList.remove('highlight-suggestion');
+                                }, 3000);
+                            }
+                            break;
+                    }
                 }
-            });
+            }
             
-            // Contextual help triggers
-            function setupContextualHelp() {
-                // Example: When user focuses on lyrics textarea
-                document.getElementById('lyrics')?.addEventListener('focus', function() {
-                    addMessage("Tip: You can use section markers like [VERSE] and [CHORUS] to help structure your song.", false);
+            // Add message to chat container
+            function addMessage(text, isUser) {
+                const chatMessages = document.getElementById('chatbot-messages');
+                if (!chatMessages) return null;
+                
+                // Create message element
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+                
+                // Set content
+                messageDiv.textContent = text;
+                
+                // Add to container
+                chatMessages.appendChild(messageDiv);
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Return the element for further manipulation
+                return messageDiv;
+            }
+            
+            // Show typing indicator
+            function showTypingIndicator() {
+                const chatMessages = document.getElementById('chatbot-messages');
+                if (!chatMessages) return null;
+                
+                // Create typing indicator
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                `;
+                
+                // Add to container
+                chatMessages.appendChild(typingDiv);
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                return typingDiv;
+            }
+            
+            // Remove typing indicator
+            function removeTypingIndicator(indicator) {
+                if (indicator && indicator.parentNode) {
+                    indicator.parentNode.removeChild(indicator);
+                }
+            }
+            
+            // Add feedback buttons to a message
+            function addFeedbackButtons(messageElement, responseId) {
+                if (!messageElement) return;
+                
+                // Add a feedback container to the message
+                const feedbackContainer = document.createElement('div');
+                feedbackContainer.className = 'message-feedback';
+                messageElement.appendChild(feedbackContainer);
+                
+                // Create feedback buttons
+                feedbackContainer.innerHTML = `
+                    <div class="feedback-question">Was this response helpful?</div>
+                    <div class="feedback-buttons">
+                        <button class="feedback-btn" data-rating="5">👍 Yes</button>
+                        <button class="feedback-btn" data-rating="1">👎 No</button>
+                    </div>
+                `;
+                
+                // Add event listeners
+                feedbackContainer.querySelectorAll('.feedback-btn').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const rating = parseInt(this.getAttribute('data-rating'));
+                        
+                        try {
+                            // Send feedback to backend
+                            const response = await fetch('/feedback', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    response_id: responseId,
+                                    rating: rating,
+                                    session_id: sessionId
+                                })
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error('Failed to send feedback');
+                            }
+                            
+                            console.log(`Feedback sent successfully: ${rating}`);
+                            
+                        } catch (error) {
+                            console.error('Error sending feedback:', error);
+                        }
+                        
+                        // Update UI regardless of API success
+                        feedbackContainer.innerHTML = `
+                            <div class="feedback-thank-you">Thanks for your feedback!</div>
+                        `;
+                        
+                        // Hide after delay
+                        setTimeout(() => {
+                            feedbackContainer.style.display = 'none';
+                        }, 3000);
+                    });
+                });
+            }
+            
+            // Check for context and suggest help
+            async function analyzeContextAndSuggest() {
+                // Only suggest if we have some context to work with
+                if (Object.keys(currentContext).length > 0) {
+                    try {
+                        const response = await fetch('/chatbot/analyze-context', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                context: currentContext
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            return;
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.suggestions) {
+                            // Add a suggestion message after a delay
+                            setTimeout(() => {
+                                const chatMessages = document.getElementById('chatbot-messages');
+                                if (chatMessages && chatMessages.childElementCount < 3) {
+                                    addMessage(data.suggestions, false);
+                                }
+                            }, 15000); // 15-second delay before showing a suggestion
+                        }
+                        
+                    } catch (error) {
+                        console.error('Error getting context suggestions:', error);
+                    }
+                }
+            }
+            
+            // Periodically analyze context when the chatbot is open
+            setInterval(() => {
+                if (chatbotContainer && chatbotContainer.classList.contains('active')) {
+                    analyzeContextAndSuggest();
+                }
+            }, 60000); // Check every minute
+            
+            // Utility: Generate session ID
+            function generateSessionId() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            
+            // Initial context check
+            setTimeout(analyzeContextAndSuggest, 5000);
+        });
+
+        // Utility: Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+
+
+        document.getElementById('lyrics').addEventListener('input', function() {
+            const vocalContainer = document.getElementById('vocal-generation-container');
+            vocalContainer.style.display = this.value.trim() !== '' ? 'block' : 'none';
+        });
+    
+        // Vocal generation function
+        document.getElementById('generate-vocals-btn').addEventListener('click', async function() {
+            const lyrics = document.getElementById('lyrics').value;
+            const vocalStyle = document.getElementById('vocal-style').value || 'female_pop'; // Default style
+            const vocalPresence = document.getElementById('vocal-presence')?.value || 50;
+            const vocalReverb = document.getElementById('vocal-reverb')?.value || 30;
+            
+            // Disable button and show loading
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner"></span> Generating Vocals...';
+            
+            // Show processing status
+            const status = document.getElementById('music-status');
+            status.innerHTML = `
+                <div><i class="fas fa-microphone"></i> Generating vocals for your lyrics...</div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="vocal-progress-bar"></div>
+                </div>
+            `;
+            status.className = 'status status-processing';
+            status.style.display = 'block';
+            
+            try {
+                // Call your vocal generation endpoint
+                const response = await fetch('/generate_vocals', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lyrics: lyrics,
+                        style: vocalStyle,
+                        presence: vocalPresence,
+                        reverb: vocalReverb
+                    })
                 });
                 
-                // Add more contextual triggers as needed
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Display the vocal results
+                    const vocalPlayer = document.getElementById('vocal-player');
+                    vocalPlayer.src = data.vocal_url;
+                    document.getElementById('vocal-result-container').style.display = 'block';
+                    
+                    // Set download link
+                    document.getElementById('download-vocals-btn').href = data.vocal_url;
+                    document.getElementById('download-vocals-btn').download = 'generated_vocals.wav';
+                    
+                    // Update status
+                    status.textContent = 'Vocals generated successfully!';
+                    status.className = 'status status-success';
+                    
+                    // Scroll to results
+                    setTimeout(() => {
+                        document.getElementById('vocal-result-container').scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest'
+                        });
+                    }, 300);
+                } else {
+                    throw new Error(data.error || 'Error generating vocals');
+                }
+            } catch (error) {
+                status.textContent = 'Vocal generation failed: ' + error.message;
+                status.className = 'status status-error';
+            } finally {
+                // Reset button state
+                this.disabled = false;
+                this.innerHTML = originalText;
             }
+        });
+    
+        // Mix tracks functionality
+        document.getElementById('mix-tracks-btn').addEventListener('click', async function() {
+            const instrumentalUrl = document.getElementById('audio-player').src;
+            const vocalUrl = document.getElementById('vocal-player').src;
             
-            setupContextualHelp();
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner"></span> Mixing...';
+            
+            try {
+                const response = await fetch('/mix_tracks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        instrumental: instrumentalUrl,
+                        vocals: vocalUrl
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update the main audio player with mixed version
+                    document.getElementById('audio-player').src = data.mixed_url;
+                    document.getElementById('download-music-btn').href = data.mixed_url;
+                    
+                    // Show success message
+                    const status = document.getElementById('music-status');
+                    status.textContent = 'Music and vocals mixed successfully!';
+                    status.className = 'status status-success';
+                } else {
+                    throw new Error(data.error || 'Error mixing tracks');
+                }
+            } catch (error) {
+                const status = document.getElementById('music-status');
+                status.textContent = 'Mixing failed: ' + error.message;
+                status.className = 'status status-error';
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-sliders-h"></i> Mix With Music';
+            }
         });
     </script>
 </body>

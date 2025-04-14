@@ -1,3 +1,6 @@
+import hashlib
+from typing import Dict
+from venv import logger
 import requests
 import os
 from dotenv import load_dotenv
@@ -68,6 +71,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 # Initialize RAG system
 rag_system = RAGSystem.from_default_config()
+sessions = {}
 
 app = Flask(__name__)
 
@@ -1295,6 +1299,13 @@ def home():
 def features():
     return render_template('features.html')
 
+import os 
+from flask import send_from_directory     
+
+@app.route('/favicon.ico') 
+def favicon(): 
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 @app.route('/generate')
 def generate():
     """Main generator page"""
@@ -1306,8 +1317,82 @@ def generate():
                          emotions=emotions, 
                          lyrics_model_initialized=lyrics_model_initialized,
                          active_page='generate')
+    
+    
+# ===== LYRICS SINGING GENERATION ROUTES =====
 
+# @app.route('/generate_vocals', methods=['POST'])
+# def generate_vocals():
+#     try:
+#         data = request.json
+#         lyrics = data.get('lyrics')
+#         style = data.get('style', 'female_pop')
+#         presence = int(data.get('presence', 50))
+#         reverb = int(data.get('reverb', 30))
+        
+#         # 1. Process the lyrics (clean, format, etc.)
+#         processed_lyrics = clean_lyrics(lyrics)
+        
+#         # 2. Generate vocals using your chosen TTS/vocal synthesis
+#         # Example using a hypothetical vocal synthesis function
+#         vocal_path = synthesize_vocals(
+#             text=processed_lyrics,
+#             voice_model=style,
+#             volume=presence/100,
+#             reverb_amount=reverb/100
+#         )
+        
+#         # 3. Save the generated vocal track
+#         filename = f"vocals_{int(time.time())}.wav"
+#         save_path = os.path.join('static/generated_vocals', filename)
+#         os.rename(vocal_path, save_path)
+        
+#         return jsonify({
+#             'success': True,
+#             'vocal_url': f'/static/generated_vocals/{filename}'
+#         })
+        
+#     except Exception as e:
+#         return jsonify({
+#             'success': False,
+#             'error': str(e)
+#         })
 
+# @app.route('/mix_tracks', methods=['POST'])
+# def mix_tracks():
+#     try:
+#         data = request.json
+#         instrumental_path = data.get('instrumental').replace('/static/', '')
+#         vocals_path = data.get('vocals').replace('/static/', '')
+        
+#         # Mix the tracks using a library like pydub
+#         instrumental = AudioSegment.from_wav(instrumental_path)
+#         vocals = AudioSegment.from_wav(vocals_path)
+        
+#         # Align lengths (pad shorter track with silence)
+#         max_length = max(len(instrumental), len(vocals))
+#         instrumental = instrumental[:max_length]
+#         vocals = vocals[:max_length]
+        
+#         # Mix with adjusted volumes
+#         mixed = instrumental.overlay(vocals)
+        
+#         # Save mixed file
+#         filename = f"mixed_{int(time.time())}.wav"
+#         save_path = os.path.join('static/mixed_tracks', filename)
+#         mixed.export(save_path, format="wav")
+        
+#         return jsonify({
+#             'success': True,
+#             'mixed_url': f'/static/mixed_tracks/{filename}'
+#         })
+        
+#     except Exception as e:
+#         return jsonify({
+#             'success': False,
+#             'error': str(e)
+#         })
+        
 # ===== MUSIC GENERATION ROUTES =====
 
 @app.route('/generate_music', methods=['POST'])
@@ -1630,24 +1715,300 @@ def health_check():
         'device': str(device),
         'emotions': list(lyrics_preprocessor.emotion_to_idx.keys()) if lyrics_model_initialized and lyrics_preprocessor else []
     })
+
+
+
+
+# Helper functions
+def generate_session_id() -> str:
+    """Generate a unique session ID"""
+    return hashlib.md5(f"{time.time()}:{os.urandom(8).hex()}".encode()).hexdigest()
+
+def _update_session_history(session_id: str, user_message: str, response: Dict):
+    """Update session history with new interaction"""
+    if session_id not in sessions:
+        sessions[session_id] = {"history": []}
     
-@app.route('/chatbot', methods=['POST'])
-def chatbot():
-    data = request.json
-    user_message = data.get('message')
-    context = data.get('context', {})
-    
-    # Get response from RAG system
-    response = rag_system.generate_response(
-        user_message=user_message,
-        project_context=context
-    )
-    
-    return jsonify({
+    # Add to history
+    sessions[session_id]["history"].append({
+        "timestamp": time.time(),
+        "user_message": user_message,
         "response": response["answer"],
-        "action": response.get("action")  # Optional: if you want the bot to trigger UI changes
+        "response_id": response.get("response_id"),
+        "documents": response.get("relevant_documents", [])
     })
     
+    # Limit history size
+    if len(sessions[session_id]["history"]) > 10:
+        sessions[session_id]["history"] = sessions[session_id]["history"][-10:]
+
+def _augment_context_with_history(session_id: str, context: Dict) -> Dict:
+    """Add session history to context"""
+    augmented_context = dict(context)
+    
+    if session_id in sessions and sessions[session_id].get("history"):
+        # Get recent messages
+        recent_messages = sessions[session_id]["history"][-3:]  # Last 3 interactions
+        
+        # Add to context
+        augmented_context["recent_interactions"] = [
+            {
+                "user": item["user_message"],
+                "assistant": item["response"]
+            }
+            for item in recent_messages
+        ]
+    
+    return augmented_context
+
+def _analyze_context_completeness(context: Dict) -> Dict:
+    """Analyze how complete the current context is"""
+    result = {
+        "has_lyrics": bool(context.get("lyrics", "")),
+        "has_music": bool(context.get("hasMusic", False)),
+        "completion": 0.0  # Percentage of completion
+    }
+    
+    # Calculate completion percentage based on required elements
+    completion_factors = 0
+    if result["has_lyrics"]:
+        completion_factors += 1
+    if result["has_music"]:
+        completion_factors += 1
+        
+    # Other factors could be considered here
+    
+    # Calculate overall completion
+    result["completion"] = min(1.0, completion_factors / 2) * 100
+    
+    return result
+
+
+@app.route('/chatbot', methods=['POST'])
+def chatbot():
+    """
+    Process user messages and generate responses using RAG system
+    """
+    try:
+        data = request.json
+        user_message = data.get('message', '').strip()
+        context = data.get('context', {})
+        session_id = data.get('session_id', generate_session_id())
+        
+        if not user_message:
+            return jsonify({
+                "error": "Message cannot be empty",
+                "status": "error"
+            }), 400
+        
+        # Log message for debugging (avoid logging sensitive data in production)
+        logger.info(f"Session {session_id}: Received message: {user_message[:50]}...")
+        
+        # Augment context with session history if available
+        augmented_context = _augment_context_with_history(session_id, context)
+        
+        # Get response from RAG system
+        response = rag_system.generate_response(
+            user_message=user_message,
+            project_context=augmented_context,
+            max_length=300,  # Adjust as needed
+            temperature=0.7,
+            top_k=5  # Number of documents to retrieve
+        )
+        
+        # Store message in session history
+        _update_session_history(session_id, user_message, response)
+        
+        # Return response
+        return jsonify({
+            "response": response["answer"],
+            "action": response.get("action"),
+            "response_id": response.get("response_id"),
+            "session_id": session_id,
+            "timing": {
+                "total_ms": round(response.get("performance", {}).get("total_time", 0) * 1000)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in chatbot endpoint: {str(e)}")
+        return jsonify({
+            "error": "An error occurred while processing your request",
+            "status": "error"
+        }), 500
+        
+@app.route('/feedback', methods=['POST'])
+def chatbot_feedback():
+    """
+    Collect feedback on responses for reinforcement learning
+    """
+    try:
+        data = request.json
+        response_id = data.get('response_id')
+        rating = data.get('rating')
+        session_id = data.get('session_id')
+        
+        if not response_id or rating is None:
+            return jsonify({
+                "error": "Missing required fields",
+                "status": "error"
+            }), 400
+        
+        # Validate rating
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError("Rating must be between 1 and 5")
+        except (ValueError, TypeError):
+            return jsonify({
+                "error": "Rating must be an integer between 1 and 5",
+                "status": "error"
+            }), 400
+        
+        # Get session data
+        session = sessions.get(session_id, {})
+        last_interaction = session.get('history', [])[-1] if session.get('history') else None
+        
+        if last_interaction and last_interaction.get('response_id') == response_id:
+            # Store feedback using RAG system's feedback mechanism
+            rag_system.store_feedback(
+                query=last_interaction['user_message'],
+                response=last_interaction['response'],
+                documents=last_interaction.get('documents', []),
+                rating=rating
+            )
+            
+            logger.info(f"Feedback stored for response {response_id}: {rating}/5")
+            
+            return jsonify({
+                "status": "success",
+                "message": "Feedback recorded successfully"
+            })
+        else:
+            logger.warning(f"Feedback for unknown response: {response_id}")
+            return jsonify({
+                "error": "Response ID not found in recent interactions",
+                "status": "error"
+            }), 404
+            
+    except Exception as e:
+        logger.error(f"Error in feedback endpoint: {str(e)}")
+        return jsonify({
+            "error": "An error occurred while processing feedback",
+            "status": "error"
+        }), 500
+
+@app.route('/chatbot/index-content', methods=['POST'])
+def index_content():
+    """
+    Add new content to the knowledge base
+    """
+    try:
+        data = request.json
+        content_list = data.get('content', [])
+        api_key = request.headers.get('X-API-Key')
+        
+        # Simple API key verification for admin functions
+        if not api_key or api_key != os.environ.get('ADMIN_API_KEY', 'default_dev_key'):
+            return jsonify({
+                "error": "Unauthorized",
+                "status": "error"
+            }), 401
+        
+        if not content_list or not isinstance(content_list, list):
+            return jsonify({
+                "error": "Content must be a non-empty list",
+                "status": "error"
+            }), 400
+        
+        # Index content
+        rag_system.index_website_content(content_list)
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Added {len(content_list)} documents to knowledge base"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in index-content endpoint: {str(e)}")
+        return jsonify({
+            "error": "An error occurred while indexing content",
+            "status": "error"
+        }), 500
+
+@app.route('/chatbot/add-document', methods=['POST'])
+def add_document():
+    """
+    Add a single document to the knowledge base
+    """
+    try:
+        data = request.json
+        api_key = request.headers.get('X-API-Key')
+        
+        # Simple API key verification for admin functions
+        if not api_key or api_key != os.environ.get('ADMIN_API_KEY', 'default_dev_key'):
+            return jsonify({
+                "error": "Unauthorized",
+                "status": "error"
+            }), 401
+        
+        if 'text' not in data:
+            return jsonify({
+                "error": "Document must contain 'text' field",
+                "status": "error"
+            }), 400
+        
+        # Add document
+        rag_system.add_to_knowledge_base(data)
+        
+        return jsonify({
+            "status": "success",
+            "message": "Document added to knowledge base"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in add-document endpoint: {str(e)}")
+        return jsonify({
+            "error": "An error occurred while adding document",
+            "status": "error"
+        }), 500
+
+@app.route('/chatbot/analyze-context', methods=['POST'])
+def analyze_context():
+    """
+    Analyze current context to provide smart suggestions
+    """
+    try:
+        data = request.json
+        context = data.get('context', {})
+        
+        # Generate a prompt for context analysis
+        analysis_prompt = (
+            "Based on the user's current activity, what would be helpful assistance? "
+            "Keep your response short and focused on actionable suggestions."
+        )
+        
+        # Get analysis from RAG system
+        response = rag_system.generate_response(
+            user_message=analysis_prompt,
+            project_context=context,
+            max_length=100,
+            temperature=0.7
+        )
+        
+        # Return context analysis
+        return jsonify({
+            "suggestions": response["answer"],
+            "context_status": _analyze_context_completeness(context)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in analyze-context endpoint: {str(e)}")
+        return jsonify({
+            "error": "An error occurred while analyzing context",
+            "status": "error"
+        }), 500
+        
 def setup_dirs():
     """Create necessary directories on startup"""
     # Create static folder if it doesn't exist

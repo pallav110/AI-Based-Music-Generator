@@ -23,3 +23,6 @@
 /game.py
 
 /__pycache__
+/resembletest.py
+/feedback
+/*.log
