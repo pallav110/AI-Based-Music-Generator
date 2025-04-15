@@ -2022,8 +2022,10 @@ def setup_dirs():
 if __name__ == '__main__':
     # Call setup_dirs before running the app
     setup_dirs()
+    # Use the PORT environment variable provided by Render, with 5000 as fallback
+    port = int(os.environ.get('PORT', 5000))
     # Run with threaded=True for handling concurrent requests
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+    app.run(debug=True, host='0.0.0.0', port=port, threaded=True)
 
 
 
