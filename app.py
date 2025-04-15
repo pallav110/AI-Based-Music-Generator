@@ -57,6 +57,7 @@ from nltk.corpus import cmudict
 import syllables
 import json
 import os
+from flask_ngrok import run_with_ngrok
 
 # Suppress unnecessary warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -74,6 +75,7 @@ rag_system = RAGSystem.from_default_config()
 sessions = {}
 
 app = Flask(__name__)
+run_with_ngrok(app)  # Automatically runs ngrok when app starts
 
 # ================ MUSIC GENERATION SETUP ================
 
@@ -2022,6 +2024,14 @@ def setup_dirs():
 if __name__ == '__main__':
     # Call setup_dirs before running the app
     setup_dirs()
+    
+    #ngrok stuff
+    # (.venv) PS C:\Users\pallav\Desktop\Python\music_generation_folder> & "C:\ngrok\ngrok.exe" http 5000   //run this
+    # app.run()                                                                                             //  Initialise this
+    # python .\app.py                                                                                       //run this    
+    
+    
+                   
     # Use the PORT environment variable provided by Render, with 5000 as fallback
     port = int(os.environ.get('PORT', 5000))
     # Run with threaded=True for handling concurrent requests
