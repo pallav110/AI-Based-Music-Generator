@@ -75,7 +75,6 @@ rag_system = RAGSystem.from_default_config()
 sessions = {}
 
 app = Flask(__name__)
-run_with_ngrok(app)  # Automatically runs ngrok when app starts
 
 # ================ MUSIC GENERATION SETUP ================
 
