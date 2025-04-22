@@ -926,7 +926,7 @@ class LyricsGenerator:
                 
             # Apply temperature
             logits = logits / self.config["temperature"]
-            
+            #for increasing creativity
             # Apply repetition penalty
             for word in self.recent_words:
                 word_idx = self.preprocessor.word_to_index.get(word, self.preprocessor.word_to_index["<UNK>"])
@@ -1009,7 +1009,7 @@ class LyricsGenerator:
             self.syllable_cache[word] = count
             return count
     
-    def generate_song(self, seed="", emotion="happy", song_structure=None):
+    def generate_song(self, seed="", emotion="joy", song_structure=None):
         """Generate a complete song with specified structure"""
         if not seed:
             seed = "<START>"
